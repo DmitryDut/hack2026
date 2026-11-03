@@ -2,7 +2,7 @@
 :root {
   --mts-red: #ff0032; --mts-red-hover: #ec022e; --mts-red-press: #cd142a; --mts-red-soft: #fec1bf;
   --bg: #ffffff; --bg-subtle: #f2f3f7; --bg-faint: #f9f9fb; --border: #e2e5eb;
-  --text: #1d2023; --text-muted: #6d7782; --text-faint: #969fa8; --black: #0d1012;
+  --text: #1d2023; --text-muted: #6d7782; --text-faint: #8c96a2; --black: #0d1012;
   --success: #008f2f; --success-bg: #d4fce0; --warning: #b55e1b; --warning-bg: #fffde8;
   --error: #d8400c; --error-bg: #fcdbcf; --info: #0070e5; --info-bg: #dceBfe;
   --radius-s: 4px; --radius-m: 8px; --radius-l: 12px;
@@ -41,7 +41,7 @@ p { margin: 0; }
 .nav a.active { color: var(--text); border-bottom-color: var(--mts-red); }
 .nav .user { color: var(--text-muted); font-size: 14px; padding: 0; border: 0; }
 main { padding: 56px 0 96px; min-height: calc(100vh - 72px - 120px); }
-.site-footer { border-top: 1px solid var(--border); padding: 32px 0 48px; color: var(--text-faint); font-size: 13px; }
+.site-footer { border-top: 1px solid var(--border); padding: 32px 0 48px; color: var(--text-muted); font-size: 13px; }
 
 .page-head { margin-bottom: 40px; }
 .page-head .lead { margin-top: 12px; color: var(--text-muted); font-size: 18px; max-width: 640px; }
@@ -163,10 +163,20 @@ input:focus, select:focus { border-color: var(--text); outline: none; }
 
 @media (max-width: 1100px) {
   .container { padding: 0 24px; }
-  .grid-3 { grid-template-columns: 1fr; }
+  .stat-value { font-size: 32px; }
+  .stat { padding: 24px 20px 20px; }
+}
+@media (max-width: 900px) {
+  .grid-3, .grid-2 { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr 1fr; }
   .tariff { grid-template-columns: 24px 1fr 1fr; }
   .tariff .t-sla { display: none; }
+  .table { display: block; overflow-x: auto; }
+  .kv { grid-template-columns: 1fr; gap: 4px; }
+  .nav { gap: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
 }
 
 .code { background: var(--bg-subtle); padding: 16px 20px; border-radius: var(--radius-m); overflow: auto; font: 13px/1.55 ui-monospace, "SF Mono", Menlo, monospace; margin: 12px 0 0; max-height: 360px; }

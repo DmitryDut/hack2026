@@ -40,7 +40,7 @@
     <table class="table table-flush" style="margin-top:28px">
       <thead><tr><th>Абонент</th><th>Статус</th><th>Приоритет</th><th></th></tr></thead>
       <tbody>{% for a in assignments %}<tr>
-        <td class="mono">{{ a.msisdn }}</td><td>{{ a.status }}</td>
+        <td>{{ a.msisdn|phone }}</td><td>{{ a.status }}</td>
         <td>{% if a.status == 'AVAILABLE' and v.priority.state == 'on' %}<span class="badge badge-success">Трафик приоритизирован</span>{% else %}<span class="badge badge-info">Включается</span>{% endif %}</td>
         <td class="num"><a class="btn btn-quiet btn-sm" href="/subscribers/{{ a.msisdn|urlencode }}">Карточка</a></td></tr>{% endfor %}</tbody>
     </table>

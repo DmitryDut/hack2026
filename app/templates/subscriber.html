@@ -2,7 +2,7 @@
 {% block title %}Абонент {{ sub.msisdn }}{% endblock %}
 {% block content %}
 <div class="crumbs"><a href="{{ '/cabinet' if user.role == 'partner' else '/operator' }}">{{ 'Услуги' if user.role == 'partner' else 'Партнёры' }}</a> / Абонент</div>
-<div class="page-head"><h1>{{ sub.msisdn }}</h1><p class="lead">Тариф связи: {{ sub.tariff }} · {{ sub.region }}</p></div>
+<div class="page-head"><h1>{{ sub.msisdn|phone }}</h1><p class="lead">Тариф связи: {{ sub.tariff }} · {{ sub.region }}</p></div>
 {% if prioritized %}
 <div class="banner banner-on"><span class="bolt"></span><div><h3>Трафик приоритизирован</h3>
   <p class="muted">{% for r in prioritized %}{{ r.v.service.name }} · {{ r.v.tariff.name }} (до {{ r.v.tariff.bitrate_mbps }} Мбит/с){{ ', ' if not loop.last }}{% endfor %}</p></div></div>

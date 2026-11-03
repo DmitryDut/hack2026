@@ -28,7 +28,7 @@
           <form class="inline" method="post" action="/cabinet/services/{{ v.service.id }}/test/confirm/{{ sig.id }}"><button class="btn btn-secondary btn-sm" type="submit">Подтвердить</button></form>
           {% else %}<span class="muted">—</span>{% endif %}</td>
       <td class="num">{% if step.result == 'pending' and st == 'in_testing' %}
-          <form class="inline" method="post" action="/cabinet/services/{{ v.service.id }}/test/check/{{ sig.id }}"><button class="btn btn-sm" type="submit">Проверить</button></form>{% endif %}</td>
+          <form class="inline" method="post" action="/cabinet/services/{{ v.service.id }}/test/check/{{ sig.id }}" onsubmit="var b=this.querySelector('button');b.textContent='Проверка…';b.classList.add('disabled')"><button class="btn btn-sm" type="submit">Проверить</button></form>{% endif %}</td>
     </tr>
   {% endfor %}
   </tbody>

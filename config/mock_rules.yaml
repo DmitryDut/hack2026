@@ -1,5 +1,6 @@
 # Поведение мока проверки сигнатур (GSMA QoD API). Решение — по значениям сигнатуры.
 validate:
+  latency_ms: [300, 800]   # имитация задержки ответа сети; в тестах отключается переменной MOCK_NO_LATENCY
   rules:
     - match: {uri: media2.mts-link.ru, port: 5005}
       result: error

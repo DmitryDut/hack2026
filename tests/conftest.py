@@ -1,6 +1,7 @@
 import os
 import tempfile
 
+os.environ["MOCK_NO_LATENCY"] = "1"
 os.environ["DATABASE_URL"] = f"sqlite:///{tempfile.mkdtemp()}/test.db"
 
 import pytest  # noqa: E402

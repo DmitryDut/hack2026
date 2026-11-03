@@ -1,7 +1,10 @@
 """Sandbox state machine (docs/SPEC.md §8): draft → in_testing → passed|failed → applied."""
 
 import json
+import os
+import random
 import secrets
+import time
 from datetime import timedelta
 
 from sqlmodel import Session, select
@@ -183,6 +186,8 @@ def start(db: Session, service: Service) -> None:
 
 def _mock_validate(sig: Signature) -> dict:
     rules = config.load("mock_rules")["validate"]
+    if rules.get("latency_ms") and not os.getenv("MOCK_NO_LATENCY"):
+        time.sleep(random.uniform(*rules["latency_ms"]) / 1000)
     for rule in rules.get("rules", []):
         if all(getattr(sig, key) == value for key, value in rule["match"].items()):
             return {k: rule[k] for k in ("result", "error_code", "message") if k in rule}
