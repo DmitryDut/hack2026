@@ -14,18 +14,21 @@ from app.models import (
     Signature,
     Tariff,
 )
-from app.services import auth, pricing, sandbox, schema_core, signatures, subscribers
+from app.services import (
+    auth,
+    export,
+    gates,
+    pricing,
+    sandbox,
+    schema_core,
+    signatures,
+    subscribers,
+)
 from app.services.sandbox import RuleError
 from app.templating import render
 from app.web.common import own_service, redirect, view
 
 router = APIRouter(prefix="/cabinet")
-TABS = [
-    ("data", "Данные услуги"),
-    ("tariff", "Тариф и стоимость"),
-    ("test", "Тестирование"),
-    ("launch", "Запуск и абоненты"),
-]
 
 
 def _tab_url(service_id: str, tab: str) -> str:
@@ -127,16 +130,10 @@ def _render_card(request, db, user, service_id, tab="data", edit=None, status_co
     v = view(db, service)
     status = v["state"].status
     sigs = sandbox.signatures(db, service.id)
-    locked = {
-        "test": None
-        if service.price_confirmed and sigs
-        else "Сначала добавьте сигнатуры и подтвердите цену",
-        "launch": None
-        if status in ("passed", "applied")
-        else "Доступно после успешного тестирования",
-    }
-    if tab not in dict(TABS) or locked.get(tab):
-        tab = "data"
+    tabs = gates.tabs()
+    locked = {tab_id: gates.reason(db, service, tab_id) for tab_id, _ in tabs}
+    if tab not in dict(tabs) or locked.get(tab):
+        tab = tabs[0][0]
     tariffs = db.exec(
         select(Tariff).where(Tariff.status == "ACTIVE").order_by(Tariff.bitrate_mbps)
     ).all()
@@ -182,7 +179,8 @@ def _render_card(request, db, user, service_id, tab="data", edit=None, status_co
         nav="cabinet",
         v=v,
         tab=tab,
-        tabs=TABS,
+        tabs=tabs,
+        price_gates_test="price_confirmed" in gates.gates("test"),
         locked=locked,
         sigs=sigs,
         edit=edit,
@@ -422,6 +420,21 @@ def connect_subscriber(
     except RuleError as exc:
         return redirect(_tab_url(service_id, "launch"), error=str(exc))
     return redirect(_tab_url(service_id, "launch"), ok=f"Подключено: {row.msisdn}")
+
+
+@router.get("/export")
+def export_page(
+    request: Request, user=Depends(auth.require_partner), db: Session = Depends(get_session)
+):
+    payload = export.build(db, user["partner_id"])
+    return render(
+        request,
+        "cabinet/export.html",
+        user=user,
+        nav="export",
+        payload=json.dumps(payload, ensure_ascii=False, indent=2),
+        count=len(payload["services"]),
+    )
 
 
 @router.get("/journal")

@@ -40,7 +40,7 @@
       {% if not applied %}<a class="btn" href="?tab=test">Перейти к тестированию</a>{% endif %}
     {% else %}
       <form method="post" action="/cabinet/services/{{ v.service.id }}/confirm-price" class="inline"><button class="btn" type="submit">Подтвердить цену</button></form>
-      <span class="hint">Без подтверждения тестирование недоступно</span>
+      {% if price_gates_test %}<span class="hint">Без подтверждения тестирование недоступно</span>{% endif %}
     {% endif %}
   </div>
 </div>

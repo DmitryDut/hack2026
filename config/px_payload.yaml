@@ -1,0 +1,18 @@
+# Маппинг JSON для PX (docs/px-json-proposal.md). Добавить поле в JSON — строка в `fields`.
+# fields: имя в JSON: имя поля (для списка — то же имя). Значения берутся из таблицы и из добавленных полей схемы.
+schema_version: "0.1"
+partner:
+  fields: {partner_id: partner_id, partner_name: name}
+service:
+  fields: {service_id: id, name: name, description: description}
+  lookups:
+    qos_profile:
+      from: tariff_code
+      entity: tariff
+      fields: [code, name, bitrate_mbps, priority_level, sla_percent]
+    duration:
+      from: duration_code
+      entity: duration
+      fields: [code, hours]
+signature:
+  fields: [ipv4, uri, port, protocol]

@@ -1,0 +1,12 @@
+# Вкладки карточки услуги и условия их доступности (docs/SPEC.md §3).
+# id вкладки соответствует шаблону app/templates/cabinet/_tab_<id>.html: data, tariff, test, launch.
+# Порядок и названия — любые; gates — список условий «И». Перечитать: «Схемы» → «Перечитать YAML-конфиг».
+# Условия: has_signatures, tariff_set, price_confirmed, test_passed, priority_on.
+tabs:
+  - {id: data, title: "Данные услуги"}
+  - {id: tariff, title: "Тариф и стоимость"}
+  - {id: test, title: "Тестирование"}
+  - {id: launch, title: "Запуск и абоненты"}
+gates:
+  test: [has_signatures, price_confirmed]
+  launch: [test_passed]

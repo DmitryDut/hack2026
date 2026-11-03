@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}JSON для PX{% endblock %}
+{% block content %}
+<div class="page-head"><h1>JSON для PX</h1>
+  <p class="lead">Конфигурация, которую платформа передаёт в PX для расчёта предложения. Попадают только услуги с подтверждённой ценой. Состав полей задаёт <span class="mono">config/px_payload.yaml</span>.</p></div>
+<div class="card">
+  <div class="section-head" style="margin-top:0"><h3>Услуг в выгрузке: {{ count }}</h3><a class="link small" href="/api/v1/partners/{{ user.partner_id }}/export">Открыть как JSON</a></div>
+  {% if not count %}<p class="muted">Пока нет услуг с подтверждённой ценой. Подтвердите цену на вкладке «Тариф и стоимость».</p>{% endif %}
+  <pre class="code" style="max-height:640px">{{ payload }}</pre>
+</div>
+{% endblock %}

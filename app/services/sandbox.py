@@ -20,7 +20,7 @@ from app.models import (
     TestStep,
     now,
 )
-from app.services import config
+from app.services import config, gates
 
 
 class RuleError(Exception):
@@ -164,11 +164,10 @@ def start(db: Session, service: Service) -> None:
     state = state_of(db, service)
     if state.status != "draft":
         raise RuleError("Тестирование можно начать только из черновика")
-    if not service.price_confirmed:
-        raise RuleError("Сначала подтвердите цену на вкладке «Тариф и стоимость»")
+    closed = gates.reason(db, service, "test")
+    if closed:
+        raise RuleError(closed)
     sigs = signatures(db, service.id)
-    if not sigs:
-        raise RuleError("Добавьте хотя бы одну сигнатуру")
     for sig in sigs:
         db.add(TestStep(service_id=service.id, signature_id=sig.id))
     state.status = "in_testing"
@@ -317,6 +316,11 @@ def apply(db: Session, service: Service) -> None:
     state = state_of(db, service)
     if state.status != "passed":
         raise RuleError("Включить приоритет можно после успешного тестирования")
+    closed = gates.reason(db, service, "launch")
+    if closed:
+        raise RuleError(closed)
+    if not (service.tariff_code and service.duration_code):
+        raise RuleError("Выберите тариф и срок")
     sigs = signatures(db, service.id)
     if len({s.ipv4 for s in sigs}) > 16:
         raise RuleError("Допускается не более 16 уникальных IP-адресов")

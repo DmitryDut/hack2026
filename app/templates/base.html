@@ -24,6 +24,7 @@
           <a href="/admin/schemas" class="{{ 'active' if nav == 'schemas' }}">Схемы</a>
         {% else %}
           <a href="/cabinet" class="{{ 'active' if nav == 'cabinet' }}">Услуги</a>
+          <a href="/cabinet/export" class="{{ 'active' if nav == 'export' }}">JSON для PX</a>
           <a href="/cabinet/journal" class="{{ 'active' if nav == 'journal' }}">Журнал</a>
         {% endif %}
         <span class="user">{{ user.name }}</span>
