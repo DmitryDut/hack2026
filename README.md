@@ -15,6 +15,7 @@ make check   # линтер + тесты
 ## Документация
 - Первоисточники, варианты ТЗ и тестовые данные: [docs/source/](docs/source/README.md)
 - Требования (ФТ/НФТ): [docs/requirements.md](docs/requirements.md) · Разбор: [docs/analysis.md](docs/analysis.md) · Глоссарий: [docs/glossary.md](docs/glossary.md)
+- **Спецификация реализации:** [docs/SPEC.md](docs/SPEC.md) · **Передача работы другому агенту:** [docs/HANDOFF.md](docs/HANDOFF.md)
 - Модель и процесс: [docs/domain.md](docs/domain.md) · Архитектура: [docs/architecture.md](docs/architecture.md)
 - Сценарий демо: [docs/demo-script.md](docs/demo-script.md)
 

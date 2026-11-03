@@ -1,6 +1,6 @@
 # Доска задач
 
-Статусы: `todo` · `in_progress` · `done`. ID требований — из [requirements.md](../requirements.md). Тестовые данные — `docs/source/zadanie/tz/*/test_data/`; в карточках `v1…v5` = `variant_1_crud_inventory` … `variant_5_px_showcase_iframe`.
+Что и как реализовывать — [SPEC.md](../SPEC.md) (§14 связывает задачи с разделами); передача работы — [HANDOFF.md](../HANDOFF.md). Статусы: `todo` · `in_progress` · `done`. ID требований — из [requirements.md](../requirements.md). Тестовые данные — `docs/source/zadanie/tz/*/test_data/`; в карточках `v1…v5` = `variant_1_crud_inventory` … `variant_5_px_showcase_iframe`.
 
 | ID | Задача | Итер. | Требования | Зависит от | Статус | Агент | Ветка |
 |---|---|---|---|---|---|---|---|
