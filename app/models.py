@@ -125,3 +125,13 @@ class Entity(SQLModel, table=True):
     type: str = Field(index=True)
     data: dict = Field(default_factory=dict, sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=now)
+
+
+class Offer(SQLModel, table=True):
+    """Saved variant of a partner's configuration: a snapshot of tariff and term per service."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    partner_id: str = Field(index=True)
+    name: str
+    items: list = Field(default_factory=list, sa_column=Column(JSON))
+    created_at: datetime = Field(default_factory=now)

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Токен недействителен{% endblock %}
+{% block content %}
+<div class="auth"><div class="card auth-card">
+  <h1>Токен недействителен</h1>
+  <p class="muted" style="margin:8px 0 24px">Откройте конфигуратор из витрины заново.</p>
+  <div class="flash flash-error">Причина: {{ reason }}</div>
+  <a class="btn btn-secondary" href="/px-showcase">В витрину</a>
+</div></div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Витрина PX{% endblock %}
+{% block content %}
+<div class="crumbs">Витрина партнёра · <span class="muted">мок Partner eXperience</span></div>
+<div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px">
+  <div><h1>Приоритет для вашего трафика</h1>
+  <p class="lead">Гарантируйте качество видеосвязи и чатов даже при перегрузке сети. Настройте сервисы, получите цену и включите приоритет без заявок.</p></div>
+  <form method="get" style="min-width:220px"><div class="field" style="margin:0"><label for="partner">Партнёр</label>
+    <select id="partner" name="partner" onchange="this.form.submit()">{% for p in partners %}<option value="{{ p.partner_id }}" {{ 'selected' if p.partner_id == current.partner_id }}>{{ p.name }}</option>{% endfor %}</select></div></form>
+</div>
+
+<div class="card">
+  <div class="actions">
+    <button id="open" class="btn" type="button">Конфигурировать сервисы QoS</button>
+    <a id="tab" class="btn btn-secondary" href="/embed?token={{ token }}&mode=tab" target="_blank" rel="noopener">Открыть в новой вкладке</a>
+  </div>
+  <p class="hint" style="margin-top:12px">Партнёр определяется подписанным токеном: <span class="mono">{{ current.partner_id }}</span>, ручной ввод не нужен.</p>
+  <div id="frame-wrap" style="display:none;margin-top:28px">
+    <iframe id="frame" title="Конфигуратор QoS" style="width:100%;height:760px;border:1px solid var(--border);border-radius:12px"></iframe>
+  </div>
+</div>
+
+<div id="result" class="section" style="display:none"></div>
+
+<script>
+  const EMBED = {{ ('/embed?token=' ~ token)|tojson }};
+  document.getElementById('open').addEventListener('click', function () {
+    document.getElementById('frame-wrap').style.display = 'block';
+    document.getElementById('frame').src = EMBED;
+    this.textContent = 'Обновить конфигуратор';
+  });
+  const fmt = new Intl.NumberFormat('ru-RU');
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+  window.addEventListener('message', async function (event) {
+    if (event.origin !== window.location.origin || !event.data || event.data.type !== 'qod:export') return;
+    const payload = event.data.payload;
+    const price = await (await fetch('/px/price', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify(payload)})).json();
+    const prices = Object.fromEntries(price.items.map(i => [i.service_id, i.price_rub_per_month]));
+    const root = document.getElementById('result'); root.replaceChildren(); root.style.display = 'block';
+    const card = el('div', 'banner banner-on');
+    card.append(el('span', 'bolt'));
+    const body = el('div'); body.append(el('h3', '', 'Партнёр подключён'), el('p', 'muted', payload.partner_name + ' · ' + payload.partner_id + ' · услуг: ' + payload.services.length));
+    card.append(body); root.append(card);
+    const wrap = el('div', 'card'); wrap.style.marginTop = '16px'; wrap.style.padding = '16px 24px 8px';
+    const table = el('table', 'table table-flush');
+    table.innerHTML = '<thead><tr><th>Услуга</th><th>Тариф</th><th>Срок</th><th>SLA</th><th class="num">Цена</th></tr></thead>';
+    const tb = el('tbody');
+    payload.services.forEach(function (s) {
+      const tr = el('tr');
+      tr.append(el('td', '', s.name), el('td', '', s.qos_profile.name + ' · до ' + s.qos_profile.bitrate_mbps + ' Мбит/с'), el('td', '', s.duration.hours + ' ч'), el('td', '', s.qos_profile.sla_percent + ' %'), el('td', 'num', fmt.format(prices[s.service_id]) + ' ₽/мес'));
+      tb.append(tr);
+    });
+    table.append(tb);
+    const tf = el('tr'); tf.append(el('td', ''), el('td', ''), el('td', ''), el('td', '', 'Итого'), el('td', 'num', fmt.format(price.total_price_rub_per_month) + ' ₽/мес')); tf.style.fontWeight = '500'; tb.append(tf);
+    wrap.append(table); root.append(wrap);
+    const raw = el('details'); raw.append(el('summary', '', 'Показать JSON'), el('pre', 'code', JSON.stringify(payload, null, 2)));
+    root.append(raw);
+    root.scrollIntoView({behavior: 'smooth'});
+  });
+</script>
+{% endblock %}

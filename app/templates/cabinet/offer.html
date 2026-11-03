@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Предложение{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Предложение</h1>
+  <p class="lead">Стоимость по услугам и варианты конфигурации: сохраните выбор, сравните и примените нужный.</p></div>
+
+<div class="grid grid-3">
+  <div class="stat"><div class="caption">Стоимость в месяц</div><div class="stat-value">{{ table.cols[0].total|rub }}<span class="unit">₽</span></div><div class="stat-note">по текущему выбору</div></div>
+  <div class="stat"><div class="caption">Цена подтверждена</div><div class="stat-value">{{ confirmed }}<span class="unit">из {{ table.services|length }} услуг</span></div><div class="stat-note">в выгрузку PX попадают только они</div></div>
+  <div class="stat"><div class="caption">Вариантов</div><div class="stat-value">{{ table.cols|length - 1 }}</div><div class="stat-note">сохранённых конфигураций</div></div>
+</div>
+
+<div class="section"><div class="section-head"><h2>Сравнение вариантов</h2></div>
+<div class="card" style="padding:16px 24px 8px">
+<table class="table table-flush">
+  <thead><tr><th>Услуга</th>{% for c in table.cols %}<th>{{ c.title }}</th>{% endfor %}</tr></thead>
+  <tbody>
+  {% for sid, name in table.services %}
+    <tr><td><strong>{{ name }}</strong></td>
+    {% for c in table.cols %}{% set cell = c.cells.get(sid) %}
+      <td>{% if cell and cell.tariff %}{{ cell.tariff }} · {{ cell.hours }} ч<div class="sub">{{ cell.price|rub }} ₽/мес</div>{% else %}<span class="muted">—</span>{% endif %}</td>
+    {% endfor %}</tr>
+  {% endfor %}
+  <tr>{% set _ = 0 %}<td class="caption">Итого в месяц</td>{% for c in table.cols %}<td><strong>{{ c.total|rub }} ₽</strong></td>{% endfor %}</tr>
+  <tr><td></td>{% for c in table.cols %}<td>{% if c.id %}
+    <form class="inline" method="post" action="/cabinet/offer/variants/{{ c.id }}/apply"><button class="btn btn-secondary btn-sm" type="submit">Применить</button></form>
+    <form class="inline" method="post" action="/cabinet/offer/variants/{{ c.id }}/delete"><button class="btn btn-quiet btn-sm" type="submit">Удалить</button></form>{% endif %}</td>{% endfor %}</tr>
+  </tbody>
+</table></div>
+<div class="card" style="margin-top:16px">
+  <form method="post" action="/cabinet/offer/variants" class="actions" style="align-items:flex-end">
+    <div class="field" style="margin:0;width:320px"><label for="vname">Сохранить текущий выбор как вариант</label><input id="vname" name="name" type="text" placeholder="Например, Экономный"></div>
+    <button class="btn btn-secondary" type="submit">Сохранить вариант</button>
+  </form>
+</div></div>
+
+<div class="section"><div class="section-head"><h2>Передать в PX</h2></div>
+<div class="card">
+  <p class="muted" style="margin-bottom:20px;max-width:640px">В PX уходит JSON с услугами, у которых подтверждена цена. PX рассчитывает предложение и показывает его в витрине.</p>
+  <div class="actions"><button id="send" class="btn" type="button">Отправить в витрину PX</button><a class="link small" href="/cabinet/export">Посмотреть JSON</a></div>
+  <div id="send-note" class="hint" style="margin-top:16px"></div>
+</div></div>
+<script>
+  document.getElementById('send').addEventListener('click', async function () {
+    const note = document.getElementById('send-note');
+    const payload = await (await fetch('/api/v1/partners/{{ user.partner_id }}/export')).json();
+    if (window.parent !== window) {
+      window.parent.postMessage({type: 'qod:export', payload: payload}, window.location.origin);
+      note.textContent = 'Отправлено в витрину: услуг ' + payload.services.length + '.';
+    } else {
+      note.innerHTML = 'Кабинет открыт вне витрины — результат смотрите во витрине PX (<a class="link" href="/px-showcase">открыть</a>) или в <a class="link" href="/cabinet/export">JSON</a>.';
+    }
+  });
+</script>
+{% endblock %}

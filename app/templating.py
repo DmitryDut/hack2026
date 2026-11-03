@@ -44,6 +44,7 @@ def flash_from(request: Request) -> dict | None:
 
 def render(request: Request, name: str, user=None, status_code: int = 200, **ctx):
     ctx.setdefault("flash", flash_from(request))
+    ctx.setdefault("embed", request.cookies.get("qod_embed") == "1")
     return templates.TemplateResponse(request, name, {"user": user, **ctx}, status_code=status_code)
 
 

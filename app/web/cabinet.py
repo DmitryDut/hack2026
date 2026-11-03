@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlmodel import Session, select
 
 from app.db import get_session
@@ -9,6 +9,7 @@ from app.models import (
     Duration,
     EventLog,
     NetworkRequest,
+    Offer,
     Service,
     ServiceState,
     Signature,
@@ -18,6 +19,7 @@ from app.services import (
     auth,
     export,
     gates,
+    offers,
     pricing,
     sandbox,
     schema_core,
@@ -420,6 +422,55 @@ def connect_subscriber(
     except RuleError as exc:
         return redirect(_tab_url(service_id, "launch"), error=str(exc))
     return redirect(_tab_url(service_id, "launch"), ok=f"Подключено: {row.msisdn}")
+
+
+@router.get("/offer")
+def offer_page(
+    request: Request, user=Depends(auth.require_partner), db: Session = Depends(get_session)
+):
+    table = offers.table(db, user["partner_id"])
+    confirmed = sum(1 for s in offers.services_of(db, user["partner_id"]) if s.price_confirmed)
+    return render(
+        request, "cabinet/offer.html", user=user, nav="offer", table=table, confirmed=confirmed
+    )
+
+
+@router.post("/offer/variants")
+def save_variant(
+    name: str = Form(""), user=Depends(auth.require_partner), db: Session = Depends(get_session)
+):
+    try:
+        offers.save_variant(db, user["partner_id"], name)
+    except RuleError as exc:
+        return redirect("/cabinet/offer", error=str(exc))
+    return redirect("/cabinet/offer", ok="Вариант сохранён")
+
+
+def _own_offer(db, user, offer_id: int):
+    offer = db.get(Offer, offer_id)
+    if offer is None or offer.partner_id != user["partner_id"]:
+        raise HTTPException(404, "Вариант не найден")
+    return offer
+
+
+@router.post("/offer/variants/{offer_id}/apply")
+def apply_variant(
+    offer_id: int, user=Depends(auth.require_partner), db: Session = Depends(get_session)
+):
+    done, skipped = offers.apply(db, user["partner_id"], _own_offer(db, user, offer_id))
+    note = f"Вариант применён к услугам: {done}. Подтвердите цену заново."
+    if skipped:
+        return redirect("/cabinet/offer", ok=note + f" Пропущено (приоритет включён): {skipped}.")
+    return redirect("/cabinet/offer", ok=note)
+
+
+@router.post("/offer/variants/{offer_id}/delete")
+def delete_variant(
+    offer_id: int, user=Depends(auth.require_partner), db: Session = Depends(get_session)
+):
+    db.delete(_own_offer(db, user, offer_id))
+    db.commit()
+    return redirect("/cabinet/offer", ok="Вариант удалён")
 
 
 @router.get("/export")

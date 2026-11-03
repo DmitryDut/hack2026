@@ -33,19 +33,37 @@ def make_token(payload: dict) -> str:
     return f"{body}.{_sign(body)}"
 
 
-def read_token(token: str | None) -> dict | None:
+def explain_token(token: str | None) -> tuple[dict | None, str | None]:
+    """(payload, None) for a good token, (None, reason) otherwise."""
     if not token or "." not in token:
-        return None
+        return None, "неверный формат токена"
     body, signature = token.rsplit(".", 1)
     if not hmac.compare_digest(signature, _sign(body)):
-        return None
+        return None, "подпись не сошлась"
     try:
         payload = json.loads(base64.urlsafe_b64decode(body + "=" * (-len(body) % 4)))
     except ValueError:
-        return None
+        return None, "неверный формат токена"
     if payload.get("exp", 0) < time.time():
-        return None
-    return payload
+        return None, "срок действия токена истёк"
+    return payload, None
+
+
+def read_token(token: str | None) -> dict | None:
+    return explain_token(token)[0]
+
+
+def partner_token(partner_id: str, name: str, ttl_seconds: int = 3600) -> str:
+    """Token the PX storefront gives to the embedded cabinet (same format as the session)."""
+    return make_token(
+        {
+            "login": partner_id,
+            "role": "partner",
+            "name": name,
+            "partner_id": partner_id,
+            "exp": int(time.time() + ttl_seconds),
+        }
+    )
 
 
 def authenticate(login: str, password: str) -> dict | None:

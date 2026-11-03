@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.db import init_db
 from app.services.auth import NeedLogin, current_user
 from app.templating import render
-from app.web import admin, api, auth, cabinet, operator, subscriber
+from app.web import admin, api, auth, cabinet, operator, px, subscriber
 
 BASE_DIR = Path(__file__).parent
 
@@ -21,8 +21,16 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="Качество связи по требованию (POC)", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
-for module in (auth, cabinet, operator, subscriber, admin, api):
+for module in (auth, cabinet, operator, subscriber, admin, api, px):
     app.include_router(module.router)
+
+
+@app.middleware("http")
+async def frame_policy(request: Request, call_next):
+    """The cabinet may be framed only by pages of this origin (the PX storefront mock)."""
+    response = await call_next(request)
+    response.headers["Content-Security-Policy"] = "frame-ancestors 'self'"
+    return response
 
 
 @app.exception_handler(NeedLogin)

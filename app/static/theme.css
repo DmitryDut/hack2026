@@ -206,3 +206,8 @@ details summary:hover { color: var(--text); }
 .table-flush th:last-child, .table-flush td:last-child { padding-right: 0; }
 .table td.num .btn-quiet { padding: 0 8px; }
 .table td.num form.inline { margin-left: 0; }
+
+.embedded .brand, .embedded .site-footer { display: none; }
+.embedded .site-header .container { height: 56px; justify-content: flex-end; }
+.embedded .nav a { padding: 16px 0 14px; }
+.embedded main { padding-top: 32px; min-height: 0; }

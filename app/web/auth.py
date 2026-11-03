@@ -48,4 +48,5 @@ def login(request: Request, login: str = Form(""), password: str = Form("")):
 def logout():
     response = RedirectResponse("/login", 303)
     response.delete_cookie(auth.COOKIE)
+    response.delete_cookie("qod_embed")
     return response
