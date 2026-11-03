@@ -4,7 +4,7 @@
 **Данные:** `v1/test_data/seed.json`, `invalid_signatures.json`; SLA — из `v5/test_data/qos_catalog.json`.
 **Файлы:** `scripts/seed.py`, `config/schemas/*.json` (стартовые схемы), `app/services/data_rules.py`, `tests/test_data_rules.py`.
 **Критерии приёмки:**
-- `make reset`: 9 протоколов, 5 профилей (Bronze…Diamond, SLA), Duration 1H…72H, партнёр `mts-link-1`, «Link ВКС» с сигнатурами и подтверждённым назначением.
+- `make reset`: 9 протоколов, 5 тарифов с русскими названиями (Бронза…Бриллиант; коэффициенты 1.0/1.5/2.0/3.0/4.0, SLA), Duration 1H…72H с коэффициентами срока 0.15/0.6/1.0/1.7/4.0, партнёр `mts-link-1`, «Link ВКС» с сигнатурами и подтверждённым назначением.
 - Порт 70000, протокол SMTP — отклонены; дубликат → 409; каскадное удаление сервиса.
 - Прогон всех кейсов из `invalid_signatures.json`.
 **Вне скоупа:** UI, экспорт.

@@ -9,12 +9,12 @@
 | Тип | Основные поля |
 |---|---|
 | partner | partner_id (напр. `mts-link-1`), name, status (`active\|draft`) |
-| service | name, description, partner_ref, qos_profile_code, duration_code |
+| service | name, description, partner_ref, qos_profile_code, duration_code, assignment_status (`draft\|confirmed`) |
 | signature | ipv4, uri, port (1–65535), protocol (enum из справочника), service_ref |
 | qos_profile | code, name, bitrate_mbps, priority_level, price_multiplier, sla_percent |
-| duration | code (`1H…72H`), hours |
+| duration | code (`1H…72H`), hours, price_multiplier (коэффициент срока: 0.15 / 0.6 / 1.0 / 1.7 / 4.0) |
 
-Справочники (`protocol`, `qos_profile`, `duration`) — тоже сущности, т.е. «новый уровень Diamond» = новая запись. Связи для экспорта — конфиг `relations.json`: `partner → service → signature`, поле связи и поля вывода заданы данными.
+Справочники (`protocol`, `qos_profile`, `duration`) — тоже сущности, т.е. «новый тариф» = новая запись. Связи для экспорта — конфиг `relations.json`: `partner → service → signature`, поле связи и поля вывода заданы данными.
 Правки по ТЗ (V2 `demo_change.json`): `ipv6` в signature, `uri` необязателен, `sla_percent` (99–99.999) в service, новая сущность `monitoring`.
 
 ## 2. Процесс сервиса (SBX-1…SBX-10)
@@ -30,7 +30,8 @@ Applied: изменения запрещены; выход только явны
 Служебные сущности (фиксированы в коде):
 | Сущность | Поля |
 |---|---|
-| TestRun | id, service_id, status (`draft\|in_testing\|passed\|failed\|applied`), started_at, finished_at, session_id |
+| TestRun | id, service_id, status (`draft\|in_testing\|passed\|failed\|applied`), started_at, finished_at |
+| ServiceState | service_id, status (то же), session_id, applied_at, expires_at — признак приоритета вычисляется из `applied` и `expires_at` (`SPEC.md` D16) |
 | TestStep | id, test_run_id, signature_id, result (`pending\|success\|error`), confirmed_by_user, checked_at, error_message |
 | EventLog | id, entity_type, entity_id, event, details, created_at |
 | NetworkRequest | id, kind (`px_reg`, `px_save_qos`, `rc_catalog`, `gsma_validate`, `gsma_session`, `qos_assignment`), request_json, response_json, ts — журнал вызовов моков |

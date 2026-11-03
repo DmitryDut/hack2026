@@ -2,13 +2,13 @@
 
 Документ самодостаточен: по нему и `requirements.md` можно писать код, не зная истории чата. Если спецификация противоречит `requirements.md`, прав `requirements.md` — и спецификацию нужно исправить. Источники тестовых данных (`V1…V5`) лежат в `docs/source/zadanie/tz/variant_N_*/test_data/`.
 
-Статус: **v1.0, 2026-11-03.** Кода пока нет, кроме каркаса (`app/main.py`, `app/db.py`, `/health`, главная страница).
+Статус: **v1.1, 2026-11-03** (учтены макеты v2: личный кабинет, вход, цена со сроком, признак приоритета). Кода пока нет, кроме каркаса (`app/main.py`, `app/db.py`, `/health`, главная страница).
 
 ## 1. Принятые решения
 | # | Решение | Откуда |
 |---|---|---|
 | D1 | Стек: FastAPI, SQLModel/SQLite, Jinja2 + HTMX + Pico.css, `jsonschema`, `pyyaml`; `uv`, `ruff`, `pytest`. Node не нужен | ADR 0001, 0003 |
-| D2 | Один процесс: витрина-мок PX и конфигуратор — разные страницы одного приложения | требование EMB-6 |
+| D2 | Один процесс: витрина-мок PX и личный кабинет — разные страницы одного приложения | требование EMB-6 |
 | D3 | Модель данных — JSON Schema в БД; формы и CRUD универсальны | ADR 0003 |
 | D4 | Процесс партнёра, цена, маппинг JSON для PX, правила мока — YAML в `config/` | ADR 0003 |
 | D5 | Подключение абоненту — QoS Provisioning (CAMARA), номер = `device.phoneNumber` | SUB-2 |
@@ -19,6 +19,10 @@
 | D10 | Два набора данных: демо-сид (на основе V4, 4 сигнатуры у «Link ВКС») и фикстура контрактных тестов экспорта (на основе V1, 3 сигнатуры). Их значения расходятся, поэтому тест экспорта грузит свою фикстуру | расхождение V1 и V4 |
 | D11 | JSON для PX — `px-json-proposal.md`; цену в экспорт не кладём | EXP-5 |
 | D12 | Цена — произведение множителей из конфига, без `eval` | наше решение |
+| D13 | **Вход партнёра:** форма `/login` (мок авторизации, логин/пароль-заглушка из `config/accounts.yaml`); сессия — cookie с тем же HMAC-токеном, что и вход из витрины (`/embed?token=` создаёт сессию без формы). Реальной аутентификации нет | решение пользователя, макеты `ui/00-login.md` |
+| D14 | **Партнёрский интерфейс — личный кабинет** (`/cabinet*`): главная со списком услуг и карточка услуги с вкладками (данные → тариф и стоимость → тестирование → запуск и абоненты); вкладки и условия доступа — `config/process.yaml` | решение пользователя, `ui/02-cabinet.md` |
+| D15 | **Срок влияет на цену:** коэффициент срока `duration.price_multiplier` (12 ч = 1.0, чтобы пример задания «Платиновый на 12 часов = 30 000 ₽/мес» сохранился): 1 ч — 0.15, 6 ч — 0.6, 12 ч — 1.0, 24 ч — 1.7, 72 ч — 4.0 (рабочие значения, меняются записью справочника). Единица цены остаётся «₽/мес», как в задании | предложено командой для POC, подтверждено пользователем |
+| D16 | **Признак приоритета** — вычисляется при показе: услуга `applied` и `expires_at` в будущем → «⚡ приоритет активен до …»; после срока — «⏱ срок истёк» (статус в БД не меняется). Отражает данные APIgw (мок), не измеряет трафик | решение пользователя |
 
 ## 2. Структура репозитория (целевая)
 ```text
@@ -28,15 +32,15 @@ app/
   config_loader.py        # читает config/*.yaml|json, валидирует при старте
   models.py               # EntityDef, Entity, ServiceState, TestRun, TestStep, EventLog, NetworkRequest, TraceEntry
   services/               # вся бизнес-логика (см. §4)
-    schema_core.py  data_rules.py  form_render.py  export.py  pricing.py  offer.py
-    sandbox.py  activation.py  subscribers.py  token.py  trace.py  audit.py
+    schema_core.py  data_rules.py  form_render.py  export.py  pricing.py  offer.py  priority.py
+    sandbox.py  activation.py  subscribers.py  token.py  auth.py  trace.py  audit.py
   api/                    # тонкие JSON-роуты: entities.py schemas.py export.py sandbox.py ...
-  web/                    # тонкие HTML-роуты: entities.py admin_schemas.py px_showcase.py embed.py sandbox.py subscriber.py landing.py
+  web/                    # тонкие HTML-роуты: auth.py cabinet.py entities.py admin_schemas.py px_showcase.py embed.py subscriber.py landing.py operator.py
   mocks/                  # px.py resource_catalog.py gsma_qod.py qos_provisioning.py
   templates/  static/
 config/
   schemas/*.json          # стартовые JSON Schema: partner service signature qos_profile duration protocol subscriber qos_assignment
-  relations.json  process.yaml  pricing.yaml  px_payload.yaml  mock_rules.yaml  protocols.yaml
+  relations.json  process.yaml  pricing.yaml  px_payload.yaml  mock_rules.yaml  protocols.yaml  accounts.yaml
 scripts/seed.py           # демо-сид: загрузка схем, справочников и данных (идемпотентно)
 tests/                    # unit, api, contract, e2e; tests/fixtures/ (копии нужных test_data)
 ```
@@ -45,27 +49,42 @@ tests/                    # unit, api, contract, e2e; tests/fixtures/ (копи�
 ## 3. Конфиги (`config/`)
 Читаются при старте и по кнопке «перечитать конфиг» в админке (`POST /admin/config/reload`); ошибка формата → понятное сообщение, приложение не стартует (при старте) или прежний конфиг остаётся (при перечитывании).
 
-### `process.yaml` — шаги процесса партнёра
+### `process.yaml` — вкладки карточки услуги и условия доступа
 ```yaml
-steps:
-  - {id: services,   title: "Сервисы и сигнатуры", screen: "/configurator/services"}
-  - {id: profiles,   title: "Профиль и срок",       screen: "/configurator/profiles"}
-  - {id: offer,      title: "Предложение и цена",   screen: "/configurator/offer"}
-  - {id: sandbox,    title: "Тест в песочнице",     screen: "/configurator/sandbox"}
-  - {id: activation, title: "Запуск",               screen: "/configurator/activation"}
+tabs:                              # порядок = порядок вкладок
+  - {id: data,   title: "Данные услуги"}
+  - {id: tariff, title: "Тариф и стоимость"}
+  - {id: test,   title: "Тестирование"}
+  - {id: launch, title: "Запуск и абоненты"}
+gates:                             # условие доступности вкладки; список = «И»
+  test:   [has_signatures, price_confirmed]
+  launch: [test_passed]
 ```
-Порядок шагов в UI — порядок в списке. Шаги — навигация; жёсткие ограничения доступа задаёт `gates` (необязательно): `gates: {sandbox: offer_confirmed, activation: passed}`.
+Условия (`gates`) — фиксированный набор предикатов над услугой: `has_signatures` (есть ≥1 сигнатура), `tariff_set` (выбраны тариф и срок), `price_confirmed` (`assignment_status = confirmed`), `test_passed` (состояние песочницы `passed` или `applied`), `priority_on` (`applied`). Вкладку без условия можно открыть всегда. Недоступная вкладка серая, подсказка — «почему» (текст по предикату). Перенос условия с одной вкладки на другую — правка YAML (сценарий C-06). Главное меню кабинета (Услуги, Стоимость и предложение, Абоненты, Журнал) задано в коде.
 
 ### `pricing.yaml`
 ```yaml
 currency: RUB
 unit: per_month
-factors:                      # цена = произведение
+factors:                          # цена = произведение
   - {field: qos_profile.bitrate_mbps}
   - {const: 100}
   - {field: qos_profile.price_multiplier}
+  - {field: duration.price_multiplier}
 ```
-`field` — путь `<тип>.<поле>` относительно сервиса; значения берутся из записи профиля, на который ссылается `service.qos_profile_code`. Цена сервиса = произведение; сумма предложения — сумма по сервисам. Пример: Platinum 100 × 100 × 3.0 = 30 000; Gold 50 × 100 × 2.0 = 10 000.
+`field` — путь `<тип>.<поле>` относительно услуги; значения берутся из записей, на которые ссылаются `service.qos_profile_code` и `service.duration_code`. Цена услуги = произведение; сумма предложения — сумма по услугам.
+Примеры (Мбит/с × 100 ₽ × коэффициент тарифа × коэффициент срока): Платина 12 ч = 100 × 100 × 3.0 × 1.0 = **30 000**; Золото 12 ч = 10 000; Золото 24 ч = 10 000 × 1.7 = 17 000; Серебро 12 ч = 4 500; Платина 24 ч = 51 000; Платина 1 ч = 4 500; Бриллиант 12 ч = 80 000.
+
+### `accounts.yaml` — демо-учётки (мок авторизации)
+```yaml
+session_ttl_hours: 8              # в iframe витрины токен живёт 1 час
+show_demo_hint: true              # показывать блок «демо-доступ» на /login
+accounts:
+  - {login: mts-link-1,    password: demo, role: partner,  partner_id: mts-link-1,    name: "MTS Link"}
+  - {login: other-partner, password: demo, role: partner,  partner_id: other-partner, name: "Другой партнёр"}
+  - {login: operator,      password: demo, role: operator, name: "Оператор"}
+```
+Пароли — заглушки для демо (репозиторий публичный: реальных секретов в нём нет и быть не должно).
 
 ### `px_payload.yaml` — маппинг JSON для PX (формат `px-json-proposal.md`)
 ```yaml
@@ -113,7 +132,7 @@ validate:
 | service | `name`*, `description`, `partner_ref`*, `qos_profile_code` (x-ref qos_profile.code), `duration_code` (x-ref duration.code), `assignment_status` (`draft`/`confirmed`, default `draft`), `offer_ref` |
 | signature | `service_ref`*, `ipv4`* (format ipv4), `uri`*, `port`* (1–65535), `protocol`* (x-ref protocol.code) |
 | qos_profile | `code`*, `name`*, `bitrate_mbps`*, `priority_level`* (1–5), `price_multiplier`*, `sla_percent`*, `status` (`ACTIVE`/`INACTIVE`/`DEPRECATED`, default ACTIVE) |
-| duration | `code`*, `hours`* (≥1) |
+| duration | `code`*, `hours`* (≥1), `price_multiplier`* (коэффициент срока, см. D15) |
 | protocol | `code`*, `layer`, `transport` |
 | subscriber | `msisdn`* (pattern `^\+7\d{10}$`), `tariff`, `region` |
 | qos_assignment | `subscriber_ref`*, `service_ref`*, `qos_profile_code`*, `assignment_id`, `status` (`REQUESTED`/`AVAILABLE`/`UNAVAILABLE`) |
@@ -123,7 +142,7 @@ validate:
 ### Служебные таблицы (в коде)
 | Таблица | Поля |
 |---|---|
-| service_state | `service_id` PK, `status` (`draft/in_testing/passed/failed/applied`), `session_id` |
+| service_state | `service_id` PK, `status` (`draft/in_testing/passed/failed/applied`), `session_id`, `applied_at`, `expires_at` (из ответа мока сессий) |
 | test_run | `id`, `service_id`, `status`, `started_at`, `finished_at` |
 | test_step | `id`, `test_run_id`, `signature_id`, `result` (`pending/success/error`), `confirmed_by_user`, `checked_at`, `error_code`, `error_message` |
 | event_log | `id`, `entity_type`, `entity_id`, `event`, `details` JSON, `created_at` |
@@ -148,6 +167,14 @@ validate:
 
 ## 6. HTTP API
 Префикс JSON: `/api/v1`. Заголовок `X-Partner-Id` обязателен для партнёрских эндпоинтов (помечены **P**): запись другого партнёра → 404. Эндпоинты без P — «админ/справочники» (в демо без аутентификации).
+
+### Вход (HTML-формы, без префикса `/api/v1`)
+| Метод и путь | Назначение | Коды |
+|---|---|---|
+| `GET /login` | страница входа | 200 |
+| `POST /login` | `login`, `password` → cookie `qod_session` (HttpOnly, SameSite=Lax; значение — HMAC-токен §10); партнёр → 303 `/cabinet`, оператор → 303 `/operator` | 303, 401 (форма с ошибкой) |
+| `GET/POST /logout` | удаляет cookie → 303 `/login` | 303 |
+Без сессии `/cabinet*` и партнёрские API → 303 `/login` (HTML) или 401 (JSON). `X-Partner-Id` для кабинета берётся из сессии; прямые API-запросы передают его заголовком.
 
 ### Ядро
 | Метод и путь | Назначение | Коды |
@@ -200,19 +227,22 @@ validate:
 Каждый вызов мока платформа пишет в `network_request` (мок сам не пишет — пишет вызывающая сторона, чтобы журнал был один).
 
 ## 7. Страницы (HTML, Jinja2 + HTMX)
-Макеты экранов — `docs/ui/` (черновик v2 для ревью); реализуемые сценарии — `docs/scenarios.md`.
-**Внимание:** макеты v2 заменяют конфигуратор из 5 шагов личным кабинетом (`/login`, `/cabinet*`); перечень изменений в этом разделе — `docs/scenarios.md` §7. Пока пользователь их не утвердил, таблица ниже остаётся действующей.
+Макеты экранов — `docs/ui/` (v2, согласованы по образу результата); реализуемые сценарии — `docs/scenarios.md`.
 | Путь | Содержимое |
 |---|---|
-| `/` | входная страница, ссылки на витрину, оператор, админку схем |
-| `/px-showcase` | витрина-мок PX: страница партнёра `mts-link-1`, кнопка «Конфигурировать сервисы QoS» открывает iframe `/embed?token=…` (токен выдаёт сервер), кнопка «Открыть в новой вкладке», карточка «Партнёр подключён» после `postMessage`, панель «Трассировка» |
-| `/embed?token=…` | проверка токена → конфигуратор; шапка с `partner_id`; режим фрейма скрывает навигацию сайта |
-| `/configurator/services` и далее | шаги из `process.yaml`: сервисы+сигнатуры, профили и Duration, предложение (цена, JSON-превью, сравнение вариантов), песочница (степпер, таблица шагов, журнал), активация и абонент |
+| `/` | входная страница, ссылки на витрину, вход, оператора, админку схем |
+| `/login`, `/logout` | вход партнёра и оператора (мок, D13), блок «демо-доступ», кнопка «Войти как оператор» |
+| `/px-showcase` | витрина-мок PX: страница партнёра `mts-link-1`, кнопка «Конфигурировать сервисы QoS» открывает iframe `/embed?token=…` (токен выдаёт сервер), «Открыть в новой вкладке», карточка «Партнёр подключён» (с признаком ⚡ по услугам партнёра) после `postMessage`, панель «Трассировка» |
+| `/embed?token=…` | проверка токена → создаёт сессию → переход в `/cabinet?embed=1` (шапка сайта скрыта); плохой токен → страница ошибки |
+| `/cabinet` | главная кабинета: баннер приоритета (⚡ N из M услуг), таблица услуг (тариф, срок, стоимость, статус/приоритет), итоги стоимости |
+| `/cabinet/services/new`, `/cabinet/services/{id}?tab=data\|tariff\|test\|launch` | форма услуги; карточка услуги с вкладками из `process.yaml`: сигнатуры; тариф и расчёт стоимости; песочница; запуск, панель «⚡ Трафик приоритизирован», подключение абонентов |
+| `/cabinet/offer` | стоимость и предложение: услуги, итоги, варианты и сравнение, JSON для PX, «Отправить в витрину PX» |
+| `/cabinet/subscribers`, `/cabinet/journal` | абоненты партнёра; журналы событий и внешних вызовов партнёра |
 | `/qos_platform/landing`, `POST /qos_platform/reg`, `POST /qos_platform`, `/cj/qos_platform` | флоу диаграммы V5, шаги 1–3 (§10) |
 | `/entities/{type}` | универсальные список + форма по схеме |
 | `/admin/schemas` | выбор типа, редактор JSON Schema, сохранение (PUT), создание типа, кнопка «перечитать конфиг» |
 | `/operator` | партнёры и статусы, журнал событий, журнал внешних вызовов (запрос/ответ JSON) |
-| `/subscribers/{msisdn}` | карточка абонента: сервисы, профиль, срок, таймлайн |
+| `/subscribers/{msisdn}` | карточка абонента: плашка «⚡ Трафик приоритизирован», услуги, тариф, срок, таймлайн |
 | `/mock-px?partner_id=` | страница предложения V1 F9 (цена по формуле) — допустимо реализовать как вид `/px-showcase` |
 Тексты UI — на русском. HTMX — для частичных обновлений (проверка шага, подтверждение).
 
@@ -227,7 +257,7 @@ IPv4 — 4 октета 0–255; порт 1–65535 (целое); протоко
 Состояния: `draft`, `in_testing`, `passed`, `failed`, `applied`.
 | Из | Действие | В | Событие (`event_log.event`) |
 |---|---|---|---|
-| draft | start (цена подтверждена, ≥1 сигнатура) | in_testing | `run_started` (details: `service_id`, `steps_created`, `from_status`, `to_status`) |
+| draft | start (выполнены `gates` вкладки «Тестирование»: по умолчанию цена подтверждена и есть ≥1 сигнатура) | in_testing | `run_started` (details: `service_id`, `steps_created`, `from_status`, `to_status`) |
 | in_testing | check шага → success | in_testing | `step_checked` (`signature_id`, `result`) |
 | in_testing | check шага → error | failed | `step_checked` (+`error_code`), затем `run_failed` (`reason: step_error`) |
 | in_testing | confirm шага | in_testing | `step_confirmed` (`signature_id`, `by_user: true`) |
@@ -241,7 +271,10 @@ IPv4 — 4 октета 0–255; порт 1–65535 (целое); протоко
 Шаги проверяются в любом порядке, но подтверждение возможно только после `success`. Правка сигнатуры в `draft` — обычная, событие `signature_updated`.
 
 ### Цена, предложение
-Предложение — набор сервисов партнёра с профилем и Duration; `POST /offers` считает цену по `pricing.yaml`. `confirm` без профиля/Duration у какого-либо сервиса → 422. Подтверждённое предложение переводит его сервисы в `assignment_status = confirmed`. Правка назначения возвращает `assignment_status` в `draft` и сбрасывает песочницу по правилу выше.
+Цена услуги = Мбит/с × 100 ₽ × коэффициент тарифа × коэффициент срока (`pricing.yaml`, D15); при смене тарифа или срока цена пересчитывается, а подтверждение (`assignment_status`) сбрасывается в `draft`. Предложение — набор сервисов партнёра с профилем и Duration; `POST /offers` считает цену по `pricing.yaml`. `confirm` без профиля/Duration у какого-либо сервиса → 422. Подтверждённое предложение переводит его сервисы в `assignment_status = confirmed`. Правка назначения возвращает `assignment_status` в `draft` и сбрасывает песочницу по правилу выше.
+
+### Признак приоритета (`priority.py`)
+Функция `priority_view(service)` возвращает `off` / `on` (с `expires_at`, остатком времени, списком сигнатур, `session_id`) / `expired`. Правило: `on` — состояние `applied` и `expires_at > now`; `expired` — `applied` и срок прошёл; иначе `off`. Для абонента: `on`, если назначение `AVAILABLE` и услуга `on`; `REQUESTED` → «включается». Используется кабинетом (баннер, строка, панель), карточкой абонента, витриной и оператором — одним источником (NFR-3, SBX-11).
 
 ### Подключение абоненту
 Допустимо только для сервиса в `applied`. Создаётся `qos_assignment`; последовательность вызовов: `POST /mock-gsma/qos-assignments` (REQUESTED) → `GET …/{id}` (AVAILABLE) → статус сохраняется; все вызовы в `network_request`, события в `event_log` (`assignment_requested`, `assignment_available`). Повторное подключение того же номера к тому же сервису → 409.
@@ -266,8 +299,11 @@ IPv4 — 4 октета 0–255; порт 1–65535 (целое); протоко
 ### Токен (V5 `token_test_vectors.json`)
 `token = b64url(payload).b64url(hmac_sha256(b64url(payload), PX_SECRET))`, `payload = {"partner_id", "expires_unix"}` (JSON без пробелов). Секрет — переменная `PX_SECRET` (демо: `hackathon-demo-secret`). Сравнение подписей — `hmac.compare_digest`. Ошибки: формат/подпись → «токен недействителен»; срок → «срок действия истёк». Страница ошибки не обращается к данным партнёра.
 
+### Сессия
+Cookie `qod_session` хранит тот же HMAC-токен (`partner_id`, `role`, `expires_unix`). Выдаётся при `POST /login` (срок `session_ttl_hours`) и при `GET /embed?token=…` (срок токена витрины, 1 час). Роль `operator` даёт доступ к `/operator`; `partner_id` кабинета берётся только из сессии, не из параметров запроса.
+
 ### Встраивание
-`GET /embed` отдаёт заголовок `Content-Security-Policy: frame-ancestors 'self'`. По завершении конфигуратор вызывает `window.parent.postMessage({type:"qod:export", payload}, window.location.origin)`; витрина слушает `message` и принимает только `event.origin === window.location.origin` и `data.type === "qod:export"`. Фолбэк — ссылка «в новой вкладке» с тем же токеном; в режиме вкладки результат показывается на странице (callback-режим).
+`GET /embed` отдаёт заголовок `Content-Security-Policy: frame-ancestors 'self'`. По завершении кабинет вызывает `window.parent.postMessage({type:"qod:export", payload}, window.location.origin)`; витрина слушает `message` и принимает только `event.origin === window.location.origin` и `data.type === "qod:export"`. Фолбэк — ссылка «в новой вкладке» с тем же токеном; в режиме вкладки результат показывается на странице (callback-режим).
 
 ### Трассировка 17 реплик
 Помощник `trace.log(session, seq, from_, to, message)` вызывается в точках:
@@ -280,7 +316,17 @@ IPv4 — 4 октета 0–255; порт 1–65535 (целое); протоко
 Реплики пишутся одним проходом с общим `session` (в cookie или скрытом поле формы). Эталон — V5 `flow_trace_template.json`; панель показывает по порядку `seq`.
 
 ## 11. Сид и сброс (`scripts/seed.py`, `make reset`)
-Идемпотентно создаёт: схемы (`config/schemas`), `protocol` ×9, `qos_profile` ×5 (с `price_multiplier` 1.0/1.5/2.0/3.0/4.0 и `sla_percent` 99.0/99.5/99.9/99.95; Diamond — 99.99, рабочее значение), `duration` ×5, партнёры `mts-link-1` («MTS Link») и `other-partner`, сервисы `svc-vcs` (Platinum/12H, `confirmed`) и `svc-chat` (Gold/24H, `draft`), сигнатуры `sig-1…sig-5` (как V4 seed, `sig-4` = `media2.mts-link.ru:5005 RTP`), абоненты (≥10 номеров формата `+7XXXXXXXXXX`), `service_state` = `draft`. `make reset` удаляет `data/app.db` и запускает сид.
+Идемпотентно создаёт:
+- схемы (`config/schemas`);
+- `protocol` ×9;
+- `qos_profile` ×5, русские названия: Бронза (10 Мбит/с, коэф. 1.0, SLA 99.0), Серебро (30, 1.5, 99.5), Золото (50, 2.0, 99.9), Платина (100, 3.0, 99.95), Бриллиант (200, 4.0, 99.99 — рабочее значение); коды `BRONZE…DIAMOND`;
+- `duration` ×5 с коэффициентами 1H 0.15, 6H 0.6, 12H 1.0, 24H 1.7, 72H 4.0;
+- партнёры `mts-link-1` («MTS Link») и `other-partner`;
+- услуги `svc-vcs` («Link ВКС», Платина, 12H) и `svc-chat` («Link Чаты», Золото, 24H) — **обе `assignment_status = draft`** (цену подтверждает партнёр в демо); цены: 30 000 и 17 000 ₽/мес;
+- сигнатуры `sig-1…sig-5` (как V4 seed, `sig-4` = `media2.mts-link.ru:5005 RTP`);
+- абоненты (≥10 номеров формата `+7XXXXXXXXXX`);
+- `service_state` = `draft`.
+Учётки — `config/accounts.yaml`. `make reset` удаляет `data/app.db` и запускает сид. Тест экспорта использует отдельную фикстуру (D10), где назначения `confirmed`.
 
 ## 12. Тесты (обязательные)
 | Файл | Что проверяет | Источник |
@@ -288,7 +334,9 @@ IPv4 — 4 октета 0–255; порт 1–65535 (целое); протоко
 | `test_schema_core.py` | 422 с полем, 404 неизвестный тип, невалидная схема не сохраняется, старые записи читаются, `x-ref`, `x-unique` | V2 A1, A7, A8 |
 | `test_data_rules.py` | порт 70000, протокол SMTP, дубликат 409, каскад; кейсы `invalid_signatures.json` | V1 A1–A3, A7 |
 | `test_export.py` | фикстура V1 → экспорт совпадает по структуре и значениям (кроме `generated_at`, id) с `expected_export.json` (+ наши добавленные поля); пустой партнёр → `[]`; draft-назначения не попадают | V1 A5, F7, F8 |
-| `test_pricing.py` | Platinum 30 000, Gold 10 000; смена множителя в конфиге меняет цену | V1, V5 |
+| `test_pricing.py` | Платина 12 ч = 30 000, Золото 12 ч = 10 000, Золото 24 ч = 17 000; смена множителя тарифа/срока или ставки в конфиге меняет цену; смена тарифа сбрасывает подтверждение | V1, V5, D15 |
+| `test_auth.py` | вход верный/неверный; `/cabinet` без сессии → `/login`; сессия от токена витрины; оператор не попадает в чужой кабинет и наоборот; партнёр видит только своё | D13 |
+| `test_priority.py` | `off`/`on`/`expired` по `expires_at`; признак абонента (`REQUESTED` → «включается») | D16 |
 | `test_sandbox.py` | весь сценарий демо V4 и сверка журнала с `expected_event_log.json`; переходы 409; изоляция по `X-Partner-Id` | V4 A1–A9 |
 | `test_mocks.py` | контракты `validate`, `qod/sessions`, `qos-assignments`; `result=error` с 200 | V4 `mock_apigw_contract.json` |
 | `test_token.py` | валидный/мусор/истёкший/чужая подпись | V5 A1–A3 |
@@ -314,14 +362,15 @@ IPv4 — 4 октета 0–255; порт 1–65535 (целое); протоко
 | T-003 | §5, §7 «Рендерер форм» и `/admin/schemas` |
 | T-004 | §3 (`pricing`, `px_payload`, `process`), §6 «Партнёр…», §8 «Цена» |
 | T-005 | §6 «Моки» (`rc`, `px`), §7 `/px-showcase` |
-| T-006 | §10 «Токен», «Встраивание» |
+| T-006 | §3 (`accounts`), §6 «Вход», §10 «Токен», «Сессия», «Встраивание» |
 | T-007 | §10 «Трассировка» |
 | T-008 | §4 (служебные таблицы), §8 «Автомат» |
 | T-009 | §3 (`mock_rules`), §6 «Моки» (`gsma`), §9 |
 | T-010 | §6 «Абонент», §8 «Подключение абоненту» |
 | T-011 | `requirements.md` §5, §12 `test_change_scenarios.py` |
 | T-012 | §11, §12 `test_demo_flow.py` |
-Критический путь: T-001 → T-002 → T-004 → T-011; параллельно после T-002: T-003, T-004, T-005, T-008.
+| T-014 | §3 (`process`), §7 (`/cabinet*`), §8 «Признак приоритета», `docs/ui/02-cabinet.md`, `03-subscriber.md` |
+Критический путь: T-001 → T-002 → T-004 → T-014 → T-011; параллельно после T-002: T-003, T-004, T-005, T-008.
 
 ## 15. Что намеренно не делаем
 Реальную авторизацию (CAPIF/OAuth), реальные SCEF/NEF/PCRF, CDR/биллинг, сессии CAMARA QoD (extend, события), AI-агента, два origin для витрины, миграции БД, Docker.

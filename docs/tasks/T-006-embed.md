@@ -1,6 +1,6 @@
-# T-006: Встраивание в витрину
+# T-006: Вход и встраивание в витрину
 
-**Цель:** EMB-1…EMB-6, NFR-4.
+**Цель:** AUTH-1…AUTH-4, EMB-1…EMB-6, NFR-4. Макет — `docs/ui/00-login.md`.
 **Данные:** `v5/test_data/token_test_vectors.json`.
 **Файлы:** `app/services/token.py`, `app/web/embed.py`, `app/templates/embed/*`, заголовки CSP/CORS в `app/main.py`, `.env.example` (`PX_SECRET`), тесты.
 **Критерии приёмки:**
