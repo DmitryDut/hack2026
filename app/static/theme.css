@@ -1,3 +1,10 @@
+@font-face { font-family: "MTS Wide"; font-weight: 500; font-style: normal; font-display: swap; src: url("/static/fonts/MTSWide-Medium.woff2") format("woff2"); }
+@font-face { font-family: "MTS Wide"; font-weight: 700; font-style: normal; font-display: swap; src: url("/static/fonts/MTSWide-Bold.woff2") format("woff2"); }
+@font-face { font-family: "MTS Text"; font-weight: 400; font-style: normal; font-display: swap; src: url("/static/fonts/MTSText-Regular.woff2") format("woff2"); }
+@font-face { font-family: "MTS Text"; font-weight: 500; font-style: normal; font-display: swap; src: url("/static/fonts/MTSText-Medium.woff2") format("woff2"); }
+@font-face { font-family: "MTS Compact"; font-weight: 400; font-style: normal; font-display: swap; src: url("/static/fonts/MTSCompact-Regular.woff2") format("woff2"); }
+@font-face { font-family: "MTS Compact"; font-weight: 500; font-style: normal; font-display: swap; src: url("/static/fonts/MTSCompact-Medium.woff2") format("woff2"); }
+
 /* Тема МТС для POC. Токены — docs/ui/brand.md (референс mws.ru). Один акцент, воздух, строгая типографика. */
 :root {
   --mts-red: #ff0032; --mts-red-hover: #ec022e; --mts-red-press: #cd142a; --mts-red-soft: #fec1bf;
@@ -18,7 +25,7 @@ body {
   font: 400 16px/1.5 var(--font-text); -webkit-font-smoothing: antialiased;
 }
 a { color: inherit; text-decoration: none; }
-h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 500; margin: 0; letter-spacing: -0.01em; }
 h1 { font-size: 40px; line-height: 1.15; }
 h2 { font-size: 28px; line-height: 1.2; }
 h3 { font-size: 20px; line-height: 1.3; }
@@ -32,7 +39,8 @@ p { margin: 0; }
 .container { max-width: 1120px; margin: 0 auto; padding: 0 32px; }
 .site-header { background: var(--bg); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
 .site-header .container { height: 72px; display: flex; align-items: center; justify-content: space-between; }
-.brand { display: flex; align-items: baseline; gap: 14px; }
+.brand { display: flex; align-items: center; gap: 16px; }
+.brand-logo { display: block; width: 36px; height: 36px; }
 .brand-mark { font: 700 24px/1 var(--font-head); letter-spacing: -0.02em; }
 .brand-name { font-size: 14px; color: var(--text-muted); }
 .nav { display: flex; align-items: center; gap: 32px; }
@@ -76,7 +84,7 @@ form.inline { display: inline; margin: 0; }
 .grid-3 { grid-template-columns: repeat(3, 1fr); }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
 .stat { background: var(--bg-subtle); border-radius: var(--radius-l); padding: 28px 28px 24px; }
-.stat-value { font: 600 40px/1.1 var(--font-head); letter-spacing: -0.02em; margin-top: 12px; font-variant-numeric: tabular-nums; }
+.stat-value { font: 500 40px/1.1 var(--font-head); letter-spacing: -0.02em; margin-top: 12px; font-variant-numeric: tabular-nums; }
 .stat-value .unit { font-size: 16px; font-weight: 500; color: var(--text-muted); margin-left: 6px; letter-spacing: 0; }
 .stat-note { margin-top: 8px; font-size: 14px; color: var(--text-muted); }
 
@@ -140,10 +148,10 @@ input:focus, select:focus { border-color: var(--text); outline: none; }
 .tariff:hover { border-color: var(--text-faint); }
 .tariff:has(input:checked) { border-color: var(--mts-red); background: var(--bg-faint); box-shadow: 0 0 0 1px var(--mts-red) inset; }
 .tariff input { accent-color: var(--mts-red); width: 18px; height: 18px; margin: 0; }
-.tariff .t-name { font: 600 20px/1.2 var(--font-head); }
+.tariff .t-name { font: 500 20px/1.2 var(--font-head); }
 .tariff .t-speed { font: 500 20px/1.2 var(--font-head); }
-.tariff .t-price { font: 600 22px/1.2 var(--font-head); text-align: right; font-variant-numeric: tabular-nums; }
-.price-hero { font: 600 56px/1.05 var(--font-head); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.tariff .t-price { font: 500 22px/1.2 var(--font-head); text-align: right; font-variant-numeric: tabular-nums; }
+.price-hero { font: 500 56px/1.05 var(--font-head); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
 .price-hero .unit { font-size: 18px; font-weight: 500; color: var(--text-muted); margin-left: 8px; letter-spacing: 0; }
 .formula { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; font-variant-numeric: tabular-nums; margin-top: 12px; color: var(--text-muted); }
 .formula b { color: var(--text); font-weight: 500; }
