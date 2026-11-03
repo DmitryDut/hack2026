@@ -18,7 +18,7 @@ PREDICATES = {
         ),
         "Сначала добавьте сигнатуры",
     ),
-    "tariff_set": (lambda db, s: bool(s.tariff_code and s.duration_code), "Выберите тариф и срок"),
+    "tariff_set": (lambda db, s: bool(s.tariff_code), "Выберите тариф"),
     "price_confirmed": (
         lambda db, s: s.price_confirmed,
         "Сначала подтвердите цену на вкладке «Тариф и стоимость»",

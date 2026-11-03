@@ -5,7 +5,6 @@ from sqlmodel import Session, select
 
 from app.db import get_session
 from app.models import (
-    Duration,
     EventLog,
     NetworkRequest,
     Offer,
@@ -137,19 +136,18 @@ def _render_card(request, db, user, service_id, tab="data", edit=None, status_co
     tariffs = db.exec(
         select(Tariff).where(Tariff.status == "ACTIVE").order_by(Tariff.bitrate_mbps)
     ).all()
-    durations = db.exec(select(Duration).order_by(Duration.hours)).all()
     extra = {}
     if tab == "tariff":
         extra["rows"] = [
             {
                 "t": t,
                 "base": t.bitrate_mbps * 100 * t.price_multiplier,
-                "price": pricing.price(t, v["duration"]) if v["duration"] else None,
+                "price": pricing.price(t),
             }
             for t in tariffs
         ]
-        if v["tariff"] and v["duration"]:
-            extra["breakdown"] = pricing.breakdown(v["tariff"], v["duration"])
+        if v["tariff"]:
+            extra["breakdown"] = pricing.breakdown(v["tariff"])
     if tab == "test":
         step_rows = {s.signature_id: s for s in sandbox.steps(db, service.id)}
         extra["step_rows"] = [(sig, step_rows.get(sig.id)) for sig in sigs if sig.id in step_rows]
@@ -185,7 +183,6 @@ def _render_card(request, db, user, service_id, tab="data", edit=None, status_co
         svc_fields=schema_core.fields(db, "service"),
         value_of=schema_core.value_of,
         tariffs=tariffs,
-        durations=durations,
         status_code=status_code,
         **extra,
         **ctx,
@@ -321,16 +318,15 @@ def delete_service(
 def set_tariff(
     service_id: str,
     tariff_code: str = Form(""),
-    duration_code: str = Form(""),
     user=Depends(auth.require_partner),
     db: Session = Depends(get_session),
 ):
     service = own_service(db, user, service_id)
     try:
-        sandbox.set_tariff(db, service, tariff_code, duration_code)
+        sandbox.set_tariff(db, service, tariff_code)
     except RuleError as exc:
         return redirect(_tab_url(service_id, "tariff"), error=str(exc))
-    return redirect(_tab_url(service_id, "tariff"), ok="Тариф и срок применены. Подтвердите цену.")
+    return redirect(_tab_url(service_id, "tariff"), ok="Тариф выбран. Подтвердите цену.")
 
 
 @router.post("/services/{service_id}/confirm-price")
@@ -397,6 +393,13 @@ def test_back(
         _tab_url(service_id, "data"),
         ok="Вы вернулись к настройке. Исправьте сигнатуру и начните тест заново.",
     )
+
+
+@router.post("/services/{service_id}/disable")
+def disable(
+    service_id: str, user=Depends(auth.require_partner), db: Session = Depends(get_session)
+):
+    return _action(service_id, "launch", sandbox.disable, "Приоритет выключен", user, db)
 
 
 @router.post("/services/{service_id}/apply")

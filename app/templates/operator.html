@@ -10,7 +10,7 @@
   <thead><tr><th>Услуга</th><th>Тариф</th><th class="num">Стоимость</th><th>Статус</th><th></th></tr></thead>
   <tbody>{% for i in row['items'] %}<tr>
     <td><strong>{{ i.service.name }}</strong>{% if i.state.session_id %}<div class="sub mono">{{ i.state.session_id }}</div>{% endif %}</td>
-    <td>{{ i.tariff.name if i.tariff else '—' }}{% if i.duration %} · {{ i.duration.hours }} ч{% endif %}</td>
+    <td>{{ i.tariff.name if i.tariff else '—' }}</td>
     <td class="num">{{ i.price|rub }} ₽</td>
     <td><span class="badge {{ i.css }}">{{ i.label }}</span></td>
     <td class="num">{% if i.state.status == 'applied' %}<form class="inline" method="post" action="/operator/services/{{ i.service.id }}/reset" onsubmit="return confirm('Сбросить услугу в черновик? Действие попадёт в журнал.')"><button class="btn btn-secondary btn-sm" type="submit">Сбросить в черновик</button></form>{% endif %}</td>

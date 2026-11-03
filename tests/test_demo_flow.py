@@ -33,21 +33,19 @@ def test_signature_validation(client):
     assert dup.status_code == 422 and "уже есть" in dup.text
 
 
-def test_pricing_follows_tariff_and_duration(client):
+def test_pricing_follows_the_tariff(client):
     login_as(client)
-    r = post(client, f"{SVC}/tariff", tariff_code="PLATINUM", duration_code="12H")
+    r = post(client, f"{SVC}/tariff", tariff_code="PLATINUM")
     assert f"30{NBSP}000" in client.get(f"{SVC}?tab=tariff").text
     assert r.status_code == 200
-    post(client, f"{SVC}/tariff", tariff_code="PLATINUM", duration_code="24H")
-    assert f"51{NBSP}000" in client.get(f"{SVC}?tab=tariff").text
-    post(client, f"{SVC}/tariff", tariff_code="GOLD", duration_code="12H")
+    post(client, f"{SVC}/tariff", tariff_code="GOLD")
     assert f"10{NBSP}000" in client.get(f"{SVC}?tab=tariff").text
 
 
 def test_full_demo_path(client):
     login_as(client)
     # tariff and price
-    post(client, f"{SVC}/tariff", tariff_code="PLATINUM", duration_code="12H")
+    post(client, f"{SVC}/tariff", tariff_code="PLATINUM")
     assert "Тестирование" in client.get(f"{SVC}?tab=test").text
     assert (
         "Начать тест" not in client.get(f"{SVC}?tab=test").text

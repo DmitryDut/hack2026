@@ -9,12 +9,11 @@
 | Тип | Основные поля |
 |---|---|
 | partner | partner_id (напр. `mts-link-1`), name, status (`active\|draft`) |
-| service | name, description, partner_ref, qos_profile_code, duration_code, assignment_status (`draft\|confirmed`) |
+| service | name, description, partner_ref, qos_profile_code, assignment_status (`draft\|confirmed`) |
 | signature | ipv4, uri, port (1–65535), protocol (enum из справочника), service_ref |
 | qos_profile | code, name, bitrate_mbps, priority_level, price_multiplier, sla_percent |
-| duration | code (`1H…72H`), hours, price_multiplier (коэффициент срока: 0.15 / 0.6 / 1.0 / 1.7 / 4.0) |
 
-Справочники (`protocol`, `qos_profile`, `duration`) — тоже сущности, т.е. «новый тариф» = новая запись. Связи для экспорта — конфиг `relations.json`: `partner → service → signature`, поле связи и поля вывода заданы данными.
+Справочники (`protocol`, `qos_profile`) — тоже сущности, т.е. «новый тариф» = новая запись. Связи для экспорта — конфиг `relations.json`: `partner → service → signature`, поле связи и поля вывода заданы данными.
 Правки по ТЗ (V2 `demo_change.json`): `ipv6` в signature, `uri` необязателен, `sla_percent` (99–99.999) в service, новая сущность `monitoring`.
 
 ## 2. Процесс сервиса (SBX-1…SBX-10)
@@ -38,16 +37,15 @@ Applied: изменения запрещены; выход только явны
 | TraceEntry | seq (1–17), from, to, message, ts — трассировка флоу V5 |
 
 ## 3. Процесс партнёра и цена (PROC-1…PROC-5)
-- Шаги процесса партнёра и их порядок — конфиг `process` (по умолчанию: анкета → сервисы/сигнатуры → профиль и срок → цена → подтверждение → тест → включение).
+- Шаги процесса партнёра и их порядок — конфиг `process` (по умолчанию: анкета → сервисы/сигнатуры → тариф → цена → подтверждение → тест → включение).
 - Цена: конфиг формулы; по умолчанию `bitrate_mbps × 100 × price_multiplier` (₽/мес).
-- Вариант предложения (PROC-4): набор «сервис + профиль + Duration + цена» с названием; у партнёра несколько вариантов, один выбирается для отправки.
+- Вариант предложения (PROC-4): набор «сервис + тариф + цена» с названием; у партнёра несколько вариантов, один выбирается для отправки.
 
 ## 5. Соответствие стандартам (STD-1…STD-3)
 | Наше | CAMARA | 3GPP |
 |---|---|---|
 | qos_profile.code / name | `QosProfile.name` | `qosReference` |
 | bitrate_mbps | `max{Up,Down}streamRate {value, unit: Mbps}` | — |
-| duration.hours | `duration` (сек) = hours × 3600; `minDuration/maxDuration` | `qosDuration` |
 | signature.ipv4 | `applicationServer.ipAddresses` (≤16) | `flowInfo`/`flowDescriptions` |
 | signature.port | `applicationServerPorts.ports` | `flowDescriptions` |
 | signature.uri | — | PFD `urls` / `domainNames` |

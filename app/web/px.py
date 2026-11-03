@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 from sqlmodel import Session, select
 
 from app.db import get_session
-from app.models import Duration, NetworkRequest, Partner, Tariff
+from app.models import NetworkRequest, Partner, Tariff
 from app.services import auth, pricing, schema_core, trace
 from app.templating import render
 
@@ -89,10 +89,6 @@ def catalog(db: Session) -> dict:
             }
             for t in tariffs
         ],
-        "durations": [
-            {"code": d.code, "hours": d.hours}
-            for d in db.exec(select(Duration).order_by(Duration.hours))
-        ],
         "protocols": schema_core.options({"x-ref": "protocol"}),
     }
     _log(db, "-", "rc_catalog", "GET", "/rc/qos_catalog", {}, {"profiles": len(body["profiles"])})
@@ -143,8 +139,7 @@ async def px_price(request: Request, db: Session = Depends(get_session)):
     items, total = [], 0
     for service in data.get("services", []):
         tariff = db.get(Tariff, (service.get("qos_profile") or {}).get("code"))
-        duration = db.get(Duration, (service.get("duration") or {}).get("code"))
-        price = pricing.price(tariff, duration) or 0
+        price = pricing.price(tariff) or 0
         items.append({"service_id": service.get("service_id"), "price_rub_per_month": price})
         total += price
     body = {

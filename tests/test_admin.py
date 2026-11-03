@@ -1,4 +1,4 @@
-"""P5: administration section — tariffs and gradations, durations, traffic passport editor."""
+"""P5/P6: administration — tariffs and gradations, traffic passport and service field editors."""
 
 from tests.conftest import login_as
 
@@ -17,12 +17,11 @@ def test_admin_hub_and_pages_for_operator_only(client):
     hub = client.get("/admin").text
     for text in (
         "Градации и тарифы",
-        "Сроки и коэффициенты",
         "Параметры идентификации трафика",
         "Поля услуги",
     ):
         assert text in hub
-    for path in ("/admin/tariffs", "/admin/durations", "/admin/passport", "/admin/service-fields"):
+    for path in ("/admin/tariffs", "/admin/passport", "/admin/service-fields"):
         assert client.get(path).status_code == 200, path
     assert "Администрирование" in client.get("/admin/tariffs").text
 
@@ -71,20 +70,9 @@ def test_tariff_levels_add_hide_delete_and_price_matrix(client):
 
 def test_used_tariff_cannot_be_deleted(client):
     login_as(client)
-    client.post(f"{SVC}/tariff", data={"tariff_code": "GOLD", "duration_code": "12H"})
+    client.post(f"{SVC}/tariff", data={"tariff_code": "GOLD"})
     operator(client)
     assert "используется в услугах" in client.post("/admin/data/tariff/GOLD/delete").text.lower()
-
-
-def test_duration_coefficients_change_prices(client):
-    operator(client)
-    r = client.post(
-        "/admin/data/duration", data={"code": "48H", "hours": "48", "price_multiplier": "2.5"}
-    )
-    assert "Запись добавлена" in r.text
-    changed = client.post("/admin/data/duration/48H", data={"hours": "48", "price_multiplier": "3"})
-    assert "Изменения сохранены" in changed.text
-    assert f"90{NBSP}000" in client.get("/admin/tariffs").text  # Platinum 100 × 100 × 3.0 × 3.0
 
 
 def test_passport_editor_adds_changes_and_deletes_fields(client):

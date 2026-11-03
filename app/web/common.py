@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 
-from app.models import Duration, Service, Tariff
+from app.models import Service, Tariff
 from app.services import pricing, sandbox
 from app.services.priority import priority_view
 
@@ -35,22 +35,18 @@ def own_service(db: Session, user: dict, service_id: str) -> Service:
 
 def view(db: Session, service: Service) -> dict:
     tariff = db.get(Tariff, service.tariff_code) if service.tariff_code else None
-    duration = db.get(Duration, service.duration_code) if service.duration_code else None
     state = sandbox.state_of(db, service)
     priority = priority_view(state)
     if priority["state"] == "on":
         label, css = "Приоритет активен", "badge-success"
-    elif priority["state"] == "expired":
-        label, css = "Срок приоритета истёк", "badge-warning"
     else:
         label, css = STATUS[state.status]
     return {
         "service": service,
         "tariff": tariff,
-        "duration": duration,
         "state": state,
         "priority": priority,
-        "price": pricing.price(tariff, duration),
+        "price": pricing.price(tariff),
         "label": label,
         "css": css,
         "sig_count": len(sandbox.signatures(db, service.id)),

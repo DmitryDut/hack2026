@@ -1,10 +1,9 @@
-"""Demo data: tariffs, durations, partners, services, signatures."""
+"""Demo data: tariffs, partners, services, signatures."""
 
 from sqlmodel import Session, SQLModel
 
 from app.db import engine
 from app.models import (
-    Duration,
     EntityDef,
     Partner,
     Service,
@@ -21,7 +20,6 @@ TARIFFS = [
     ("PLATINUM", "Платина", 100, 4, 3.0, 99.95, 30),
     ("DIAMOND", "Бриллиант", 200, 5, 4.0, 99.99, 20),
 ]
-DURATIONS = [("1H", 1, 0.15), ("6H", 6, 0.6), ("12H", 12, 1.0), ("24H", 24, 1.7), ("72H", 72, 4.0)]
 SIGNATURES = [
     ("sig-1", "svc-vcs", "10.10.1.5", "vcs.mts-link.ru", 443, "HTTPS"),
     ("sig-2", "svc-vcs", "10.10.1.6", "media.mts-link.ru", 5004, "RTP"),
@@ -51,7 +49,6 @@ def main() -> None:
             )
             for c, n, b, p, m, s, lat in TARIFFS
         )
-        db.add_all(Duration(code=c, hours=h, price_multiplier=m) for c, h, m in DURATIONS)
         db.add_all(
             [
                 Partner(partner_id="mts-link-1", name="MTS Link"),
@@ -66,7 +63,6 @@ def main() -> None:
                     name="Link ВКС",
                     description="Видеоконференцсвязь MTS Link",
                     tariff_code="PLATINUM",
-                    duration_code="12H",
                 ),
                 Service(
                     id="svc-chat",
@@ -74,7 +70,6 @@ def main() -> None:
                     name="Link Чаты",
                     description="Чаты MTS Link",
                     tariff_code="GOLD",
-                    duration_code="24H",
                 ),
             ]
         )

@@ -10,7 +10,7 @@
 <div class="banner banner-on">
   <span class="bolt"></span>
   <div><h3>Трафик приоритизирован</h3>
-  <p class="muted">Приоритет включён для {{ on_count }} из {{ total_count }} услуг{% for i in items if i.priority.state == 'on' %} · {{ i.service.name }} до {{ i.priority.until|hm }}{% endfor %}</p></div>
+  <p class="muted">Приоритет включён для {{ on_count }} из {{ total_count }} услуг{% for i in items if i.priority.state == 'on' %}{% endfor %}</p></div>
 </div>
 {% else %}
 <div class="banner banner-off">
@@ -31,15 +31,14 @@
   {% if items %}
   <div class="card" style="padding:16px 24px 8px">
   <table class="table table-flush">
-    <thead><tr><th>Услуга</th><th>Тариф</th><th>Срок</th><th class="num">Стоимость</th><th>Статус</th><th></th></tr></thead>
+    <thead><tr><th>Услуга</th><th>Тариф</th><th class="num">Стоимость</th><th>Статус</th><th></th></tr></thead>
     <tbody>
     {% for i in items %}
       <tr>
         <td><strong>{{ i.service.name }}</strong><div class="sub">{{ i.sig_count }} сигнатур{{ 'а' if i.sig_count == 1 else '' }}</div></td>
         <td>{% if i.tariff %}{{ i.tariff.name }}<div class="sub">до {{ i.tariff.bitrate_mbps }} Мбит/с</div>{% else %}<span class="muted">—</span>{% endif %}</td>
-        <td>{% if i.duration %}{{ i.duration.hours }} ч{% else %}<span class="muted">—</span>{% endif %}</td>
         <td class="num">{% if i.price is not none %}<strong>{{ i.price|rub }} ₽</strong><div class="sub">в месяц</div>{% else %}<span class="muted">—</span>{% endif %}</td>
-        <td><span class="badge {{ i.css }}">{{ i.label }}</span>{% if i.priority.state == 'on' %}<div class="sub" style="margin-top:6px">до {{ i.priority.until|hm }}</div>{% endif %}</td>
+        <td><span class="badge {{ i.css }}">{{ i.label }}</span>{% if i.priority.state == 'on' %}<div class="sub" style="margin-top:6px">с {{ i.priority.since|hm }}</div>{% endif %}</td>
         <td class="num"><a class="btn btn-secondary btn-sm" href="/cabinet/services/{{ i.service.id }}">Открыть</a></td>
       </tr>
     {% endfor %}

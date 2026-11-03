@@ -1,10 +1,10 @@
 import json
 
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, HTTPException, Request
 from sqlmodel import Session, select
 
 from app.db import get_session
-from app.models import Duration, EntityDef, Service, Tariff
+from app.models import EntityDef, Service, Tariff
 from app.services import auth, config, entities, field_editor, pricing, schema_core
 from app.services.sandbox import RuleError
 from app.templating import render
@@ -200,9 +200,9 @@ def reload_config(user=Depends(auth.require_operator)):
     return redirect("/admin/schemas", ok="Конфигурация перечитана")
 
 
-# ---- administration hub: tariffs, durations, traffic passport ------------------
+# ---- administration hub: tariffs, traffic passport ------------------
 
-PAGES = {"tariff": "/admin/tariffs", "duration": "/admin/durations"}
+PAGES = {"tariff": "/admin/tariffs"}
 FIELD_PAGES = {"signature": "/admin/passport", "service": "/admin/service-fields"}
 
 
@@ -218,7 +218,6 @@ def admin_home(
         nav="admin",
         custom=custom,
         tariffs=len(entities.rows(db, "tariff")),
-        durations=len(entities.rows(db, "duration")),
         sig_fields=len(field_editor.describe(db, "signature")),
         svc_fields=len(field_editor.describe(db, "service")),
     )
@@ -226,22 +225,17 @@ def admin_home(
 
 def _dict_page(request, db, user, type_, status_code=200, **ctx):
     rows = entities.rows(db, type_)
-    column = Service.tariff_code if type_ == "tariff" else Service.duration_code
+    column = Service.tariff_code
     usage = {r["id"]: len(db.exec(select(Service).where(column == r["id"])).all()) for r in rows}
-    extra = {}
-    if type_ == "tariff":
-        tariffs = db.exec(select(Tariff).order_by(Tariff.bitrate_mbps)).all()
-        durations = db.exec(select(Duration).order_by(Duration.hours)).all()
-        extra["durations"] = durations
-        extra["matrix"] = [(t, [pricing.price(t, d) for d in durations]) for t in tariffs]
-        extra["factors"] = config.load("pricing")["factors"]
+    prices = {t.code: pricing.price(t) for t in db.exec(select(Tariff))}
+    extra = {"prices": prices, "factors": config.load("pricing")["factors"]}
     return render(
         request,
         "admin_dict.html",
         user=user,
         nav="admin",
         type_=type_,
-        title="Градации и тарифы" if type_ == "tariff" else "Сроки и коэффициенты",
+        title="Градации и тарифы",
         fields=schema_core.fields(db, type_),
         rows=rows,
         usage=usage,
@@ -259,13 +253,6 @@ def admin_tariffs(
     return _dict_page(request, db, user, "tariff")
 
 
-@router.get("/admin/durations")
-def admin_durations(
-    request: Request, user=Depends(auth.require_operator), db: Session = Depends(get_session)
-):
-    return _dict_page(request, db, user, "duration")
-
-
 @router.post("/admin/data/{type_}")
 async def data_create(
     request: Request,
@@ -273,6 +260,8 @@ async def data_create(
     user=Depends(auth.require_operator),
     db: Session = Depends(get_session),
 ):
+    if type_ not in PAGES:
+        raise HTTPException(404, "Справочник не найден")
     raw = dict(await request.form())
     data, errors = entities.validate(db, type_, raw)
     if not errors:
@@ -293,6 +282,8 @@ async def data_update(
     user=Depends(auth.require_operator),
     db: Session = Depends(get_session),
 ):
+    if type_ not in PAGES:
+        raise HTTPException(404, "Справочник не найден")
     raw = dict(await request.form())
     raw["code"] = id_
     data, errors = entities.validate(db, type_, raw)
@@ -309,6 +300,8 @@ async def data_update(
 def data_toggle(
     type_: str, id_: str, user=Depends(auth.require_operator), db: Session = Depends(get_session)
 ):
+    if type_ not in PAGES:
+        raise HTTPException(404, "Справочник не найден")
     row = db.get(Tariff, id_) if type_ == "tariff" else None
     if row is None:
         return redirect(PAGES.get(type_, "/admin"), error="Запись не найдена")
@@ -325,6 +318,8 @@ def data_toggle(
 def data_delete(
     type_: str, id_: str, user=Depends(auth.require_operator), db: Session = Depends(get_session)
 ):
+    if type_ not in PAGES:
+        raise HTTPException(404, "Справочник не найден")
     try:
         entities.delete(db, type_, id_)
     except RuleError as exc:

@@ -7,7 +7,6 @@ from sqlmodel import Session, select
 
 from app.mocks import gsma
 from app.models import (
-    Duration,
     EventLog,
     NetworkRequest,
     Service,
@@ -124,20 +123,13 @@ def after_change(
 # ---- price and tariff -----------------------------------------------------
 
 
-def set_tariff(db: Session, service: Service, tariff_code: str, duration_code: str) -> None:
-    tariff, duration = db.get(Tariff, tariff_code), db.get(Duration, duration_code)
-    if tariff is None or tariff.status != "ACTIVE" or duration is None:
-        raise RuleError("Выберите доступный тариф и срок")
+def set_tariff(db: Session, service: Service, tariff_code: str) -> None:
+    tariff = db.get(Tariff, tariff_code)
+    if tariff is None or tariff.status != "ACTIVE":
+        raise RuleError("Выберите доступный тариф")
     guard_change(db, service)
-    changes = {
-        "tariff": {"old": service.tariff_code, "new": tariff_code},
-        "duration": {"old": service.duration_code, "new": duration_code},
-    }
-    service.tariff_code, service.duration_code, service.price_confirmed = (
-        tariff_code,
-        duration_code,
-        False,
-    )
+    changes = {"tariff": {"old": service.tariff_code, "new": tariff_code}}
+    service.tariff_code, service.price_confirmed = tariff_code, False
     db.add(service)
     db.commit()
     after_change(db, service, "tariff_changed", changes=changes, reset_reason="tariff_modified")
@@ -145,7 +137,7 @@ def set_tariff(db: Session, service: Service, tariff_code: str, duration_code: s
 
 def confirm_price(db: Session, service: Service, price: int | None) -> None:
     if price is None:
-        raise RuleError("Сначала выберите тариф и срок")
+        raise RuleError("Сначала выберите тариф")
     guard_change(db, service)
     service.price_confirmed = True
     db.add(service)
@@ -229,7 +221,6 @@ def check(db: Session, service: Service, signature_id: str) -> None:
     request = {
         "signature": {"ipv4": sig.ipv4, "uri": sig.uri, "port": sig.port, "protocol": sig.protocol},
         "qos_profile_code": service.tariff_code,
-        "duration_code": service.duration_code,
         "qos_profile": _profile(db, service),
     }
     response = gsma.validate(request)
@@ -311,22 +302,18 @@ def back(db: Session, service: Service) -> None:
 # ---- activation -----------------------------------------------------------
 
 
-def _payload(
-    db: Session, service: Service, tariff: Tariff, duration: Duration, sigs: list[Signature]
-) -> dict:
+def _payload(db: Session, service: Service, tariff: Tariff, sigs: list[Signature]) -> dict:
     transport = {p["code"]: p["transport"] for p in config.load("protocols")["protocols"]}
     proto_number = {"tcp": 6, "udp": 17}
     return {
         "partner_id": service.partner_id,
         "service": service.name,
         "qos_profile": {"code": tariff.code, "bitrate_mbps": tariff.bitrate_mbps},
-        "duration": {"code": duration.code, "hours": duration.hours},
         "signatures": [
             {"ipv4": s.ipv4, "uri": s.uri, "port": s.port, "protocol": s.protocol} for s in sigs
         ],
         "camara": {
             "qosProfile": tariff.code,
-            "duration": duration.hours * 3600,
             "applicationServer": {"ipAddresses": sorted({s.ipv4 for s in sigs})},
             "applicationServerPorts": {"ports": sorted({s.port for s in sigs})},
         },
@@ -342,8 +329,7 @@ def _payload(
 
 
 def preview(db: Session, service: Service) -> dict:
-    tariff, duration = db.get(Tariff, service.tariff_code), db.get(Duration, service.duration_code)
-    return _payload(db, service, tariff, duration, signatures(db, service.id))
+    return _payload(db, service, db.get(Tariff, service.tariff_code), signatures(db, service.id))
 
 
 def apply(db: Session, service: Service) -> None:
@@ -353,33 +339,17 @@ def apply(db: Session, service: Service) -> None:
     closed = gates.reason(db, service, "launch")
     if closed:
         raise RuleError(closed)
-    if not (service.tariff_code and service.duration_code):
-        raise RuleError("Выберите тариф и срок")
+    if not service.tariff_code:
+        raise RuleError("Выберите тариф")
     sigs = signatures(db, service.id)
     if len({s.ipv4 for s in sigs}) > 16:
         raise RuleError("Допускается не более 16 уникальных IP-адресов")
-    tariff, duration = db.get(Tariff, service.tariff_code), db.get(Duration, service.duration_code)
-    payload = _payload(db, service, tariff, duration, sigs)
+    payload = _payload(db, service, db.get(Tariff, service.tariff_code), sigs)
     response = gsma.create_session(payload)
-    started = datetime.fromisoformat(response["started_at"])
-    expires = datetime.fromisoformat(response["expires_at"])
     session_id = response["session_id"]
-    net(
-        db,
-        service,
-        "gsma_session",
-        "POST",
-        "/mock-gsma/qod/sessions",
-        payload,
-        response,
-        201,
-    )
-    state.status, state.session_id, state.applied_at, state.expires_at = (
-        "applied",
-        session_id,
-        started,
-        expires,
-    )
+    net(db, service, "gsma_session", "POST", "/mock-gsma/qod/sessions", payload, response, 201)
+    state.status, state.session_id = "applied", session_id
+    state.applied_at = datetime.fromisoformat(response["started_at"])
     log(
         db,
         service,
@@ -392,11 +362,39 @@ def apply(db: Session, service: Service) -> None:
     db.commit()
 
 
+def disable(db: Session, service: Service) -> None:
+    """Switch the priority off; the service returns to "test passed" and can be enabled again."""
+    state = state_of(db, service)
+    if state.status != "applied":
+        raise RuleError("Приоритет не включён")
+    session_id = state.session_id
+    response = gsma.delete_session(session_id)
+    net(
+        db,
+        service,
+        "gsma_session_delete",
+        "DELETE",
+        f"/mock-gsma/qod/sessions/{session_id}",
+        {},
+        response,
+    )
+    state.status, state.session_id, state.applied_at = "passed", None, None
+    log(
+        db,
+        service,
+        "priority_disabled",
+        session_id=session_id,
+        from_status="applied",
+        to_status="passed",
+    )
+    db.commit()
+
+
 def operator_reset(db: Session, service: Service) -> None:
     state = state_of(db, service)
     if state.status != "applied":
-        raise RuleError("Сбросить можно только запущенную услугу")
+        raise RuleError("Сбросить можно только включённую услугу")
     _clear_steps(db, service.id)
-    state.status, state.session_id, state.applied_at, state.expires_at = "draft", None, None, None
+    state.status, state.session_id, state.applied_at = "draft", None, None
     log(db, service, "applied_reset", reason="operator")
     db.commit()

@@ -16,7 +16,7 @@
 <div class="card">
   <h3>Проверка сигнатур в песочнице</h3>
   <p class="muted" style="margin:8px 0 24px;max-width:620px">Для каждой сигнатуры сеть измеряет задержку, джиттер, потери пакетов и скорость и сравнивает с нормой тарифа. Результат вы подтверждаете вручную.</p>
-  <dl class="kv" style="margin-bottom:28px"><dt>Сигнатур к проверке</dt><dd>{{ sigs|length }}</dd><dt>Тариф</dt><dd>{{ v.tariff.name }} · {{ v.duration.hours }} ч · {{ v.price|rub }} ₽/мес</dd>
+  <dl class="kv" style="margin-bottom:28px"><dt>Сигнатур к проверке</dt><dd>{{ sigs|length }}</dd><dt>Тариф</dt><dd>{{ v.tariff.name }} · {{ v.price|rub }} ₽/мес</dd>
     {% if v.tariff %}<dt>Нормы тарифа</dt><dd>задержка до {{ value_of(v.tariff, 'latency_ms') or '—' }} мс · скорость от 90 % от {{ v.tariff.bitrate_mbps }} Мбит/с</dd>{% endif %}</dl>
   <form method="post" action="/cabinet/services/{{ v.service.id }}/test/start"><button class="btn" type="submit">Начать тест</button></form>
 </div>

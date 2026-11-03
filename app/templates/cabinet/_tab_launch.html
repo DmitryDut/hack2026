@@ -5,7 +5,6 @@
   <p class="muted" style="margin:8px 0 24px;max-width:620px">Конфигурация будет передана в GSMA QoD API (мок). После ответа сети трафик услуги будет помечен как приоритизированный.</p>
   <dl class="kv">
     <dt>Тариф</dt><dd>{{ v.tariff.name }} · до {{ v.tariff.bitrate_mbps }} Мбит/с · SLA {{ v.tariff.sla_percent }} %</dd>
-    <dt>Срок</dt><dd>{{ v.duration.hours }} ч</dd>
     <dt>Сигнатур</dt><dd>{{ sigs|length }}</dd>
     <dt>Стоимость</dt><dd><strong>{{ v.price|rub }} ₽ в месяц</strong></dd>
   </dl>
@@ -13,20 +12,18 @@
   <form method="post" action="/cabinet/services/{{ v.service.id }}/apply" style="margin-top:28px"><button class="btn" type="submit">Включить приоритет</button></form>
 </div>
 {% elif st == 'applied' %}
-  {% if v.priority.state == 'on' %}
-  <div class="card panel-on">
+    <div class="card panel-on">
     <div class="actions" style="margin-bottom:24px"><span class="bolt"></span><h2>Трафик приоритизирован</h2></div>
     <dl class="kv">
       <dt>Тариф</dt><dd>{{ v.tariff.name }} · до {{ v.tariff.bitrate_mbps }} Мбит/с · SLA {{ v.tariff.sla_percent }} %</dd>
-      <dt>Действует</dt><dd>с {{ v.priority.since|hm }} до {{ v.priority.until|hm }} · осталось {{ v.priority.remaining }}</dd>
+      <dt>Включён</dt><dd>с {{ v.priority.since|dtf }}</dd>
       <dt>Под приоритетом</dt><dd><div class="sig-list">{% for s in sigs %}<span class="mono">{{ s.ipv4 }}:{{ s.port }} {{ s.protocol }}</span>{% endfor %}</div></dd>
       {% if summary %}<dt>Результаты теста</dt><dd>задержка в среднем {{ summary.latency_avg }} мс (норма ≤ {{ summary.norms.latency_ms }}), джиттер {{ summary.jitter_avg }} мс, потери до {{ summary.loss_max }} %, скорость от {{ summary.throughput_min }} Мбит/с</dd>{% endif %}
       <dt>Сессия в сети</dt><dd class="mono">{{ v.state.session_id }}</dd>
     </dl>
-    <p class="hint" style="margin-top:24px">Статус отражает включение по данным GSMA QoD API (мок); фактический трафик в прототипе не измеряется.</p>
+    <div class="actions" style="margin-top:28px">
+      <form method="post" action="/cabinet/services/{{ v.service.id }}/disable" onsubmit="return confirm('Выключить приоритет для услуги?')"><button class="btn btn-secondary" type="submit">Выключить приоритет</button></form>
+    </div>
+    <p class="hint" style="margin-top:20px">Статус отражает включение по данным GSMA QoD API (мок); фактический трафик в прототипе не измеряется.</p>
   </div>
-  {% else %}
-  <div class="card" style="border-left:4px solid var(--warning)"><h2>Срок приоритета истёк</h2>
-    <p class="muted" style="margin-top:8px">Приоритет действовал до {{ v.priority.until|dtf }}. Для повторного включения попросите оператора сбросить услугу в черновик.</p></div>
-  {% endif %}
 {% endif %}

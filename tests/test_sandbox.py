@@ -27,7 +27,7 @@ SVC = "/cabinet/services/svc-vcs"
 
 def test_event_journal_matches_reference(client):
     login_as(client)
-    client.post(f"{SVC}/tariff", data={"tariff_code": "PLATINUM", "duration_code": "12H"})
+    client.post(f"{SVC}/tariff", data={"tariff_code": "PLATINUM"})
     client.post(f"{SVC}/confirm-price")
     client.post(f"{SVC}/test/start")
     for sig in ("sig-1", "sig-2", "sig-3"):

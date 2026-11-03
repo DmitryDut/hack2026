@@ -1,6 +1,6 @@
 """Schema-driven validation and forms (docs/SPEC.md §5, D3).
 
-Built-in types (tariff, duration, service, signature) keep their table columns; fields added
+Built-in types (tariff, service, signature) keep their table columns; fields added
 through the schema editor live in the row's `extra` JSON.
 Custom types are stored in the generic Entity table.
 """
@@ -13,11 +13,11 @@ from jsonschema import Draft7Validator
 from jsonschema.exceptions import SchemaError
 from sqlmodel import Session
 
-from app.models import Duration, EntityDef, Service, Signature, Tariff
+from app.models import EntityDef, Service, Signature, Tariff
 from app.services import config
 
 SCHEMA_DIR = config.CONFIG_DIR / "schemas"
-MODELS = {"tariff": Tariff, "duration": Duration, "service": Service, "signature": Signature}
+MODELS = {"tariff": Tariff, "service": Service, "signature": Signature}
 ALLOWED_TYPES = {"string", "integer", "number", "boolean"}
 TYPE_ID = re.compile(r"^[a-z][a-z0-9_]{1,30}$")
 

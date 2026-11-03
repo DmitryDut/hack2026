@@ -2,12 +2,10 @@
 {% block title %}Администрирование{% endblock %}
 {% block content %}
 <div class="page-head"><h1>Администрирование</h1>
-  <p class="lead">Настройка платформы без разработки: тарифы и градации, сроки, поля паспорта трафика. Изменения сразу видны партнёрам.</p></div>
+  <p class="lead">Настройка платформы без разработки: тарифы и градации, поля паспорта трафика. Изменения сразу видны партнёрам.</p></div>
 <div class="grid grid-2">
   <a class="card tile" href="/admin/tariffs"><div class="caption">Тарифы</div><h2>Градации и тарифы</h2>
-    <p class="muted">Уровни качества: скорость, целевая задержка, SLA, коэффициент цены. Добавить, изменить, скрыть. Матрица цен «уровень × срок».</p><div class="tile-meta">Уровней: {{ tariffs }}</div></a>
-  <a class="card tile" href="/admin/durations"><div class="caption">Сроки</div><h2>Сроки и коэффициенты</h2>
-    <p class="muted">На сколько часов включается приоритет и как срок влияет на цену.</p><div class="tile-meta">Сроков: {{ durations }}</div></a>
+    <p class="muted">Уровни качества: скорость, целевая задержка, SLA, коэффициент цены. Добавить, изменить, скрыть.</p><div class="tile-meta">Уровней: {{ tariffs }}</div></a>
   <a class="card tile" href="/admin/passport"><div class="caption">Паспорт трафика</div><h2>Параметры идентификации трафика</h2>
     <p class="muted">Поля сигнатуры: IPv4, URI, порт, протокол и любые дополнительные. Добавить поле, сделать обязательным, задать формат и границы.</p><div class="tile-meta">Полей: {{ sig_fields }}</div></a>
   <a class="card tile" href="/admin/service-fields"><div class="caption">Услуга</div><h2>Поля услуги</h2>

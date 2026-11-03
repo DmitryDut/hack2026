@@ -24,20 +24,12 @@ class Tariff(SQLModel, table=True):
     extra: dict = Field(default_factory=dict, sa_column=Column(JSON))
 
 
-class Duration(SQLModel, table=True):
-    code: str = Field(primary_key=True)
-    hours: int
-    price_multiplier: float
-    extra: dict = Field(default_factory=dict, sa_column=Column(JSON))
-
-
 class Service(SQLModel, table=True):
     id: str = Field(primary_key=True)
     partner_id: str = Field(index=True)
     name: str
     description: str = ""
     tariff_code: str | None = None
-    duration_code: str | None = None
     price_confirmed: bool = False
     extra: dict = Field(default_factory=dict, sa_column=Column(JSON))
 
@@ -57,7 +49,6 @@ class ServiceState(SQLModel, table=True):
     status: str = "draft"  # draft | in_testing | passed | failed | applied
     session_id: str | None = None
     applied_at: datetime | None = None
-    expires_at: datetime | None = None
 
 
 class TestStep(SQLModel, table=True):

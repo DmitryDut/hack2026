@@ -5,7 +5,6 @@ import os
 import random
 import secrets
 import time
-from datetime import timedelta
 
 from app.models import now
 from app.services import config
@@ -106,13 +105,15 @@ def validate(request: dict) -> dict:
 
 
 def create_session(request: dict) -> dict:
-    """POST /mock-gsma/qod/sessions → 201."""
-    started = now()
-    expires = started + timedelta(hours=request["duration"]["hours"])
+    """POST /mock-gsma/qod/sessions → 201. The session lives until it is deleted."""
     return {
         "session_id": f"qod-session-{secrets.token_hex(3)}",
         "status": "ACTIVE",
-        "started_at": started.isoformat(),
-        "expires_at": expires.isoformat(),
+        "started_at": now().isoformat(),
         "qos_profile": request["qos_profile"]["code"],
     }
+
+
+def delete_session(session_id: str) -> dict:
+    """DELETE /mock-gsma/qod/sessions/{id}: the priority is switched off."""
+    return {"session_id": session_id, "status": "TERMINATED", "terminated_at": now().isoformat()}

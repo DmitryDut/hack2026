@@ -6,7 +6,7 @@
   <p class="muted"><span class="mono">{{ client_id }}</span> · {{ tariff.name }} · до {{ tariff.bitrate_mbps }} Мбит/с · SLA {{ tariff.sla_percent }} %</p></div></div>
 <div class="card section"><dl class="kv">
   <dt>Тариф</dt><dd>{{ tariff.name }}</dd><dt>SLA</dt><dd>{{ tariff.sla_percent }} % (из каталога)</dd>
-  <dt>Цена (срок 12 ч)</dt><dd><strong>{{ price|rub }} ₽ в месяц</strong></dd><dt>Запись в PX</dt><dd class="mono">{{ qos_id }}</dd></dl>
+  <dt>Цена</dt><dd><strong>{{ price|rub }} ₽ в месяц</strong></dd><dt>Запись в PX</dt><dd class="mono">{{ qos_id }}</dd></dl>
   <div class="actions" style="margin-top:28px"><a class="btn" href="/px-showcase?partner={{ client_id }}">Перейти к настройке сервисов</a></div></div>
 {{ panel(trace, covered) }}
 {% endblock %}

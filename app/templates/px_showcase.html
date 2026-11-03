@@ -44,11 +44,11 @@
     card.append(body); root.append(card);
     const wrap = el('div', 'card'); wrap.style.marginTop = '16px'; wrap.style.padding = '16px 24px 8px';
     const table = el('table', 'table table-flush');
-    table.innerHTML = '<thead><tr><th>Услуга</th><th>Тариф</th><th>Срок</th><th>SLA</th><th class="num">Цена</th></tr></thead>';
+    table.innerHTML = '<thead><tr><th>Услуга</th><th>Тариф</th><th>SLA</th><th class="num">Цена</th></tr></thead>';
     const tb = el('tbody');
     payload.services.forEach(function (s) {
       const tr = el('tr');
-      tr.append(el('td', '', s.name), el('td', '', s.qos_profile.name + ' · до ' + s.qos_profile.bitrate_mbps + ' Мбит/с'), el('td', '', s.duration.hours + ' ч'), el('td', '', s.qos_profile.sla_percent + ' %'), el('td', 'num', fmt.format(prices[s.service_id]) + ' ₽/мес'));
+      tr.append(el('td', '', s.name), el('td', '', s.qos_profile.name + ' · до ' + s.qos_profile.bitrate_mbps + ' Мбит/с'), el('td', '', s.qos_profile.sla_percent + ' %'), el('td', 'num', fmt.format(prices[s.service_id]) + ' ₽/мес'));
       tb.append(tr);
     });
     table.append(tb);

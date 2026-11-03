@@ -1,33 +1,32 @@
-"""P4: price = Мбит/с × ставка × коэф. тарифа × коэф. срока; C-05 changes it by config only."""
+"""P4/P6: price = Мбит/с × ставка × коэффициент тарифа (₽ в месяц); C-05 changes it by config."""
 
 import copy
 
-from app.models import Duration, Tariff
+from sqlmodel import Session
+
+from app.db import engine
+from app.models import Tariff
 from app.services import config, pricing
 from tests.conftest import login_as
 
 NBSP = " "
+SVC = "/cabinet/services/svc-vcs"
 
 
-def price(db_client, tariff, duration):
-    from sqlmodel import Session
-
-    from app.db import engine
-
+def price(code):
     with Session(engine) as db:
-        return pricing.price(db.get(Tariff, tariff), db.get(Duration, duration))
+        return pricing.price(db.get(Tariff, code))
 
 
 def test_prices_follow_the_task_formula(client):
-    assert price(client, "PLATINUM", "12H") == 30000
-    assert price(client, "GOLD", "12H") == 10000
-    assert price(client, "GOLD", "24H") == 17000
-    assert price(client, "SILVER", "12H") == 4500
-    assert price(client, "DIAMOND", "12H") == 80000
-    assert price(client, "PLATINUM", "1H") == 4500
+    assert price("BRONZE") == 1000
+    assert price("SILVER") == 4500
+    assert price("GOLD") == 10000
+    assert price("PLATINUM") == 30000
+    assert price("DIAMOND") == 80000
 
 
-def test_c05_rate_and_duration_discount_by_config_and_data(client, monkeypatch):
+def test_c05_rate_by_config_and_tariff_coefficient_by_data(client, monkeypatch):
     original = config.load
 
     def patched(name):
@@ -37,20 +36,28 @@ def test_c05_rate_and_duration_discount_by_config_and_data(client, monkeypatch):
         return data
 
     monkeypatch.setattr(config, "load", patched)
-    assert price(client, "PLATINUM", "12H") == 36000
+    assert price("PLATINUM") == 36000
     monkeypatch.setattr(config, "load", original)
     login_as(client, "operator")
     client.post(
-        "/entities/duration/24H", data={"code": "24H", "hours": "24", "price_multiplier": "1.5"}
+        "/admin/data/tariff/GOLD",
+        data={
+            "name": "Золото",
+            "bitrate_mbps": "50",
+            "priority_level": "3",
+            "price_multiplier": "1.5",
+            "sla_percent": "99.9",
+            "latency_ms": "50",
+            "status": "ACTIVE",
+        },
     )
-    assert price(client, "GOLD", "24H") == 15000
+    assert price("GOLD") == 7500
 
 
 def test_tariff_change_resets_price_confirmation(client):
     login_as(client)
-    svc = "/cabinet/services/svc-vcs"
-    client.post(f"{svc}/tariff", data={"tariff_code": "GOLD", "duration_code": "12H"})
-    assert "Цена подтверждена" in client.post(f"{svc}/confirm-price").text
-    client.post(f"{svc}/tariff", data={"tariff_code": "SILVER", "duration_code": "12H"})
-    assert "Подтвердить цену" in client.get(f"{svc}?tab=tariff").text
-    assert f"4{NBSP}500" in client.get(f"{svc}?tab=tariff").text
+    client.post(f"{SVC}/tariff", data={"tariff_code": "GOLD"})
+    assert "Цена подтверждена" in client.post(f"{SVC}/confirm-price").text
+    client.post(f"{SVC}/tariff", data={"tariff_code": "SILVER"})
+    page = client.get(f"{SVC}?tab=tariff").text
+    assert "Подтвердить цену" in page and f"4{NBSP}500" in page

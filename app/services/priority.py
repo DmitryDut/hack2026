@@ -1,21 +1,8 @@
-from app.models import ServiceState, now
-
-
-def _remaining(seconds: int) -> str:
-    hours, rest = divmod(max(seconds, 0), 3600)
-    return f"{hours} ч {rest // 60} мин"
+from app.models import ServiceState
 
 
 def priority_view(state: ServiceState | None) -> dict:
-    """off | on | expired — see docs/SPEC.md D16. Derived at read time, DB is not touched."""
-    if state is None or state.status != "applied" or state.expires_at is None:
+    """off | on: the service is either switched on (applied) or off. See docs/SPEC.md D16."""
+    if state is None or state.status != "applied":
         return {"state": "off"}
-    left = int((state.expires_at - now()).total_seconds())
-    if left > 0:
-        return {
-            "state": "on",
-            "until": state.expires_at,
-            "since": state.applied_at,
-            "remaining": _remaining(left),
-        }
-    return {"state": "expired", "until": state.expires_at}
+    return {"state": "on", "since": state.applied_at}

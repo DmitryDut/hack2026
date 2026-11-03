@@ -18,7 +18,7 @@
   {% for sid, name in table.services %}
     <tr><td><strong>{{ name }}</strong></td>
     {% for c in table.cols %}{% set cell = c.cells.get(sid) %}
-      <td>{% if cell and cell.tariff %}{{ cell.tariff }} · {{ cell.hours }} ч<div class="sub">{{ cell.price|rub }} ₽/мес</div>{% else %}<span class="muted">—</span>{% endif %}</td>
+      <td>{% if cell and cell.tariff %}{{ cell.tariff }}<div class="sub">{{ cell.price|rub }} ₽/мес</div>{% else %}<span class="muted">—</span>{% endif %}</td>
     {% endfor %}</tr>
   {% endfor %}
   <tr>{% set _ = 0 %}<td class="caption">Итого в месяц</td>{% for c in table.cols %}<td><strong>{{ c.total|rub }} ₽</strong></td>{% endfor %}</tr>

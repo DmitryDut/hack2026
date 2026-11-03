@@ -76,9 +76,7 @@ def test_catalog_and_px_mocks(client):
         "/px/price",
         json={
             "partner_id": "x",
-            "services": [
-                {"service_id": "s", "qos_profile": {"code": "GOLD"}, "duration": {"code": "12H"}}
-            ],
+            "services": [{"service_id": "s", "qos_profile": {"code": "GOLD"}}],
         },
     ).json()
     assert priced["total_price_rub_per_month"] == 10000
@@ -86,19 +84,17 @@ def test_catalog_and_px_mocks(client):
 
 def test_offer_variants_compare_and_apply(client):
     login_as(client)
-    client.post(f"{SVC}/tariff", data={"tariff_code": "PLATINUM", "duration_code": "12H"})
-    client.post(
-        "/cabinet/services/svc-chat/tariff", data={"tariff_code": "GOLD", "duration_code": "24H"}
-    )
-    assert f"47{NBSP}000" in client.get("/cabinet/offer").text
+    client.post(f"{SVC}/tariff", data={"tariff_code": "PLATINUM"})
+    client.post("/cabinet/services/svc-chat/tariff", data={"tariff_code": "GOLD"})
+    assert f"40{NBSP}000" in client.get("/cabinet/offer").text
     saved = client.post("/cabinet/offer/variants", data={"name": "Базовый"})
     assert "Вариант сохранён" in saved.text
-    client.post(f"{SVC}/tariff", data={"tariff_code": "SILVER", "duration_code": "12H"})
+    client.post(f"{SVC}/tariff", data={"tariff_code": "SILVER"})
     page = client.get("/cabinet/offer").text
-    assert "Базовый" in page and f"21{NBSP}500" in page  # current 4 500 + 17 000
+    assert "Базовый" in page and f"14{NBSP}500" in page  # current 4 500 + 10 000
     applied = client.post("/cabinet/offer/variants/1/apply")
     assert (
-        "Вариант применён" in applied.text and f"47{NBSP}000" in client.get("/cabinet/offer").text
+        "Вариант применён" in applied.text and f"40{NBSP}000" in client.get("/cabinet/offer").text
     )
     assert "Укажите название" in client.post("/cabinet/offer/variants", data={"name": " "}).text
     other = login_as(client, "other-partner")

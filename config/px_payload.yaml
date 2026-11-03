@@ -10,9 +10,5 @@ service:
       from: tariff_code
       entity: tariff
       fields: [code, name, bitrate_mbps, latency_ms, priority_level, sla_percent]
-    duration:
-      from: duration_code
-      entity: duration
-      fields: [code, hours]
 signature:
   fields: [ipv4, uri, port, protocol]

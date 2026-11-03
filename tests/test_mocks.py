@@ -35,4 +35,4 @@ def test_session_contract(client):
         and body["status"] == "ACTIVE"
         and body["session_id"].startswith("qod-session-")
     )
-    assert body["qos_profile"] == "PLATINUM" and body["expires_at"] > body["started_at"]
+    assert body["qos_profile"] == "PLATINUM" and "expires_at" not in body

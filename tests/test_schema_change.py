@@ -36,7 +36,7 @@ def test_c01_new_tariff_is_priced_and_offered(client):
     bad = client.post("/entities/tariff", data={"code": "x", "name": "", "bitrate_mbps": "abc"})
     assert bad.status_code == 422
     login_as(client)
-    client.post(f"{SVC}/tariff", data={"tariff_code": "DIAMOND_PLUS", "duration_code": "12H"})
+    client.post(f"{SVC}/tariff", data={"tariff_code": "DIAMOND_PLUS"})
     page = client.get(f"{SVC}?tab=tariff").text
     assert "Бриллиант+" in page and f"150{NBSP}000" in page
 

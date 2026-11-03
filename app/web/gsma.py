@@ -13,3 +13,8 @@ async def validate(request: Request):
 @router.post("/qod/sessions", status_code=201)
 async def create_session(request: Request):
     return gsma.create_session(await request.json())
+
+
+@router.delete("/qod/sessions/{session_id}")
+def delete_session(session_id: str):
+    return gsma.delete_session(session_id)

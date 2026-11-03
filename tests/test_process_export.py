@@ -31,7 +31,7 @@ def test_export_has_only_confirmed_services(client):
     login_as(client)
     empty = client.get("/api/v1/partners/mts-link-1/export").json()
     assert empty["partner_id"] == "mts-link-1" and empty["services"] == []
-    client.post(f"{SVC}/tariff", data={"tariff_code": "PLATINUM", "duration_code": "12H"})
+    client.post(f"{SVC}/tariff", data={"tariff_code": "PLATINUM"})
     client.post(f"{SVC}/confirm-price")
     data = client.get("/api/v1/partners/mts-link-1/export").json()
     assert data["schema_version"] == "0.1" and data["partner_name"] == "MTS Link"
@@ -45,7 +45,7 @@ def test_export_has_only_confirmed_services(client):
         "priority_level": 4,
         "sla_percent": 99.95,
     }
-    assert service["duration"] == {"code": "12H", "hours": 12}
+    assert "duration" not in service
     assert "JSON для PX" in client.get("/cabinet/export").text
 
 
@@ -56,7 +56,7 @@ def test_export_is_isolated_between_partners(client):
 
 def test_c07_new_field_in_px_json_by_config_only(client, override):
     login_as(client)
-    client.post(f"{SVC}/tariff", data={"tariff_code": "GOLD", "duration_code": "24H"})
+    client.post(f"{SVC}/tariff", data={"tariff_code": "GOLD"})
     client.post(f"{SVC}/confirm-price")
     before = client.get("/api/v1/partners/mts-link-1/export").json()["services"][0]
     assert "status" not in before["qos_profile"]
@@ -94,7 +94,7 @@ def test_c06_test_before_price_by_config_only(client, override):
     # price still unconfirmed, so activation is refused with the gate message
     refused = client.post(f"{SVC}/apply")
     assert "Сначала подтвердите цену" in refused.text
-    client.post(f"{SVC}/tariff", data={"tariff_code": "PLATINUM", "duration_code": "12H"})
+    client.post(f"{SVC}/tariff", data={"tariff_code": "PLATINUM"})
     client.post(f"{SVC}/confirm-price")
     # changing the tariff reset the run; the full path works again once the test is repeated
     assert "Начать тест" in client.get(f"{SVC}?tab=test").text

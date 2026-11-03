@@ -1,18 +1,18 @@
-"""CRUD over schema-described types: built-in tables (tariff, duration) and custom entities."""
+"""CRUD over schema-described types: the tariff table and custom entities."""
 
 import secrets
 
 from sqlmodel import Session, select
 
-from app.models import Duration, Entity, EntityDef, Service, Tariff
+from app.models import Entity, EntityDef, Service, Tariff
 from app.services import schema_core
 from app.services.sandbox import RuleError
 
-TABLES = {"tariff": (Tariff, "code"), "duration": (Duration, "code")}
+TABLES = {"tariff": (Tariff, "code")}
 
 
 def types(db: Session) -> list[EntityDef]:
-    """Types editable in the reference-data UI: tariffs, durations and every custom type."""
+    """Types editable in the reference-data UI: tariffs and every custom type."""
     defs = db.exec(select(EntityDef).order_by(EntityDef.builtin.desc(), EntityDef.type)).all()
     return [d for d in defs if d.type in TABLES or not d.builtin]
 
@@ -20,9 +20,7 @@ def types(db: Session) -> list[EntityDef]:
 def rows(db: Session, type_: str) -> list[dict]:
     if type_ in TABLES:
         model, pk = TABLES[type_]
-        items = db.exec(
-            select(model).order_by(getattr(model, "bitrate_mbps" if type_ == "tariff" else "hours"))
-        ).all()
+        items = db.exec(select(model).order_by(model.bitrate_mbps)).all()
         names = [f["name"] for f in schema_core.fields(db, type_)]
         return [
             {"id": getattr(i, pk), **{n: schema_core.value_of(i, n) for n in names}} for i in items
@@ -79,7 +77,7 @@ def update(db: Session, type_: str, id_: str, data: dict) -> None:
 def delete(db: Session, type_: str, id_: str) -> None:
     if type_ in TABLES:
         model, _ = TABLES[type_]
-        column = Service.tariff_code if type_ == "tariff" else Service.duration_code
+        column = Service.tariff_code
         if db.exec(select(Service).where(column == id_)).first():
             raise RuleError(
                 "Запись используется в услугах — удалить нельзя. Переведите тариф в INACTIVE."

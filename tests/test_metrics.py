@@ -10,7 +10,7 @@ SVC = "/cabinet/services/svc-vcs"
 
 def start_test(client, tariff="PLATINUM"):
     login_as(client)
-    client.post(f"{SVC}/tariff", data={"tariff_code": tariff, "duration_code": "12H"})
+    client.post(f"{SVC}/tariff", data={"tariff_code": tariff})
     client.post(f"{SVC}/confirm-price")
     client.post(f"{SVC}/test/start")
 

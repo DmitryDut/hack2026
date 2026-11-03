@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from sqlmodel import Session
 
 from app.db import get_session
-from app.models import Duration, Tariff
+from app.models import Tariff
 from app.services import auth, pricing, trace
 from app.templating import render
 from app.web import px
@@ -101,7 +101,7 @@ def choose(
     trace.log(db, session, 15)
     trace.log(db, session, 16, qos_id=saved["id"])
     trace.log(db, session, 17, client_id=client_id, profile=tariff.name, sla=tariff.sla_percent)
-    price = pricing.price(tariff, db.get(Duration, "12H"))
+    price = pricing.price(tariff)
     return _page(
         request,
         db,
