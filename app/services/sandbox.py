@@ -1,14 +1,11 @@
 """Sandbox state machine (docs/SPEC.md §8): draft → in_testing → passed|failed → applied."""
 
 import json
-import os
-import random
-import secrets
-import time
-from datetime import timedelta
+from datetime import datetime
 
 from sqlmodel import Session, select
 
+from app.mocks import gsma
 from app.models import (
     Duration,
     EventLog,
@@ -18,7 +15,6 @@ from app.models import (
     Signature,
     Tariff,
     TestStep,
-    now,
 )
 from app.services import config, gates
 
@@ -183,16 +179,6 @@ def start(db: Session, service: Service) -> None:
     db.commit()
 
 
-def _mock_validate(sig: Signature) -> dict:
-    rules = config.load("mock_rules")["validate"]
-    if rules.get("latency_ms") and not os.getenv("MOCK_NO_LATENCY"):
-        time.sleep(random.uniform(*rules["latency_ms"]) / 1000)
-    for rule in rules.get("rules", []):
-        if all(getattr(sig, key) == value for key, value in rule["match"].items()):
-            return {k: rule[k] for k in ("result", "error_code", "message") if k in rule}
-    return dict(rules["default"])
-
-
 def _step(db: Session, service: Service, signature_id: str) -> TestStep:
     step = next((s for s in steps(db, service.id) if s.signature_id == signature_id), None)
     if step is None:
@@ -212,13 +198,13 @@ def check(db: Session, service: Service, signature_id: str) -> None:
         "qos_profile_code": service.tariff_code,
         "duration_code": service.duration_code,
     }
-    response = _mock_validate(sig)
+    response = gsma.validate(request)
     net(db, service, "gsma_validate", "POST", "/mock-gsma/validate", request, response)
     if response["result"] == "error":
         step.result, step.error_code, step.error_message = (
             "error",
             response.get("error_code"),
-            response.get("message"),
+            response.get("error_message"),
         )
         log(
             db,
@@ -325,23 +311,18 @@ def apply(db: Session, service: Service) -> None:
     if len({s.ipv4 for s in sigs}) > 16:
         raise RuleError("Допускается не более 16 уникальных IP-адресов")
     tariff, duration = db.get(Tariff, service.tariff_code), db.get(Duration, service.duration_code)
-    started = now()
-    expires = started + timedelta(hours=duration.hours)
-    session_id = f"qod-session-{secrets.token_hex(3)}"
-    response = {
-        "session_id": session_id,
-        "status": "ACTIVE",
-        "started_at": started.isoformat(),
-        "expires_at": expires.isoformat(),
-        "qos_profile": tariff.code,
-    }
+    payload = _payload(db, service, tariff, duration, sigs)
+    response = gsma.create_session(payload)
+    started = datetime.fromisoformat(response["started_at"])
+    expires = datetime.fromisoformat(response["expires_at"])
+    session_id = response["session_id"]
     net(
         db,
         service,
         "gsma_session",
         "POST",
         "/mock-gsma/qod/sessions",
-        _payload(db, service, tariff, duration, sigs),
+        payload,
         response,
         201,
     )

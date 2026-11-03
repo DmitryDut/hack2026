@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "_trace.html" import panel %}
 {% block title %}Витрина PX{% endblock %}
 {% block content %}
 <div class="crumbs">Витрина партнёра · <span class="muted">мок Partner eXperience</span></div>
@@ -58,4 +59,5 @@
     root.scrollIntoView({behavior: 'smooth'});
   });
 </script>
+{{ panel(trace, covered) }}
 {% endblock %}

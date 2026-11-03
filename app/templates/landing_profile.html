@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_trace.html" import panel %}
+{% block title %}Выбор тарифа{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Выберите тариф</h1>
+  <p class="lead">{{ company }} зарегистрирована: <span class="mono">{{ client_id }}</span>.</p></div>
+<form method="post" action="/qos_platform">
+  <input type="hidden" name="session" value="{{ session }}"><input type="hidden" name="client_id" value="{{ client_id }}">
+  <div class="tariffs">
+  {% for p in profiles %}
+    <label class="tariff"><input type="radio" name="profile" value="{{ p.code }}" required>
+      <span class="t-name">{{ p.name }}</span><span class="t-speed">до {{ p.bitrate_mbps }} Мбит/с</span>
+      <span class="muted small t-sla">SLA {{ p.sla_percent }} %</span><span class="t-price"></span></label>
+  {% endfor %}
+  </div>
+  <div style="margin-top:28px"><button class="btn" type="submit">Подключить</button></div>
+</form>
+{{ panel(trace, covered) }}
+{% endblock %}

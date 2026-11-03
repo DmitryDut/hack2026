@@ -1,0 +1,11 @@
+{% macro panel(trace, covered) %}
+<details class="section" {{ 'open' if trace and covered[0] < 17 }}>
+  <summary>Трассировка сообщений · покрыто реплик {{ covered[0] }} из {{ covered[1] }}</summary>
+  <div class="card" style="padding:16px 24px 8px;margin-top:12px">
+    <table class="table table-flush">
+      <thead><tr><th class="num">№</th><th>От</th><th>Кому</th><th>Сообщение</th><th>Время</th></tr></thead>
+      <tbody>{% for r in trace %}<tr><td class="num">{{ r.seq }}</td><td>{{ r.sender }}</td><td>{{ r.receiver }}</td><td class="mono small">{{ r.message }}</td><td class="mono muted">{{ r.created_at|dtf }}</td></tr>{% else %}<tr><td colspan="5" class="empty">Реплик пока нет</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</details>
+{% endmacro %}

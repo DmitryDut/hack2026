@@ -1,0 +1,63 @@
+{
+  "_comment": "Невалидные сигнатуры для проверки критериев A1-A3. Каждый объект: payload для POST /api/v1/signatures (service_id подставить реальный) и ожидаемая ошибка.",
+  "cases": [
+    {
+      "id": "A1-port-too-high",
+      "criterion": "A1",
+      "payload": { "service_id": "<SERVICE_ID_VCS>", "ipv4": "10.10.1.5", "uri": "vcs.mts-link.ru", "port": 70000, "protocol": "HTTPS" },
+      "expected_http": 422,
+      "expected_error_contains": "port"
+    },
+    {
+      "id": "A1-port-zero",
+      "criterion": "A1",
+      "payload": { "service_id": "<SERVICE_ID_VCS>", "ipv4": "10.10.1.5", "uri": "vcs.mts-link.ru", "port": 0, "protocol": "HTTPS" },
+      "expected_http": 422,
+      "expected_error_contains": "port"
+    },
+    {
+      "id": "A1-ipv4-octet-300",
+      "criterion": "A1",
+      "payload": { "service_id": "<SERVICE_ID_VCS>", "ipv4": "300.10.1.5", "uri": "vcs.mts-link.ru", "port": 443, "protocol": "HTTPS" },
+      "expected_http": 422,
+      "expected_error_contains": "ipv4"
+    },
+    {
+      "id": "A1-ipv4-not-4-octets",
+      "criterion": "A1",
+      "payload": { "service_id": "<SERVICE_ID_VCS>", "ipv4": "10.10.1", "uri": "vcs.mts-link.ru", "port": 443, "protocol": "HTTPS" },
+      "expected_http": 422,
+      "expected_error_contains": "ipv4"
+    },
+    {
+      "id": "A2-protocol-not-in-catalog",
+      "criterion": "A2",
+      "payload": { "service_id": "<SERVICE_ID_VCS>", "ipv4": "10.10.1.5", "uri": "vcs.mts-link.ru", "port": 25, "protocol": "SMTP" },
+      "expected_http": 422,
+      "expected_error_contains": "protocol"
+    },
+    {
+      "id": "A2-protocol-lowercase",
+      "criterion": "A2",
+      "payload": { "service_id": "<SERVICE_ID_VCS>", "ipv4": "10.10.1.5", "uri": "vcs.mts-link.ru", "port": 443, "protocol": "https" },
+      "expected_http": 422,
+      "expected_error_contains": "protocol",
+      "_note": "строчные буквы не входят в справочник — либо отклонить (422), либо нормализовать к HTTPS и принять; зафиксировать поведение в ТЗ заранее"
+    },
+    {
+      "id": "A3-duplicate-signature",
+      "criterion": "A3",
+      "payload": { "service_id": "<SERVICE_ID_VCS>", "ipv4": "10.10.1.5", "uri": "vcs.mts-link.ru", "port": 443, "protocol": "HTTPS" },
+      "precondition": "эта сигнатура уже существует в сервисе (из сида)",
+      "expected_http": 409,
+      "expected_error_contains": "duplicate"
+    },
+    {
+      "id": "F2-signature-requires-service",
+      "criterion": "A4",
+      "payload": { "service_id": "nonexistent-service-id", "ipv4": "10.10.1.5", "uri": "vcs.mts-link.ru", "port": 443, "protocol": "HTTPS" },
+      "expected_http": 404,
+      "expected_error_contains": "service"
+    }
+  ]
+}

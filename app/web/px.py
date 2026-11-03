@@ -8,7 +8,7 @@ from sqlmodel import Session, select
 
 from app.db import get_session
 from app.models import Duration, NetworkRequest, Partner, Tariff
-from app.services import auth, pricing, schema_core
+from app.services import auth, pricing, schema_core, trace
 from app.templating import render
 
 router = APIRouter()
@@ -39,6 +39,7 @@ def showcase(request: Request, partner: str = "mts-link-1", db: Session = Depend
     partners = db.exec(select(Partner).order_by(Partner.name)).all()
     current = db.get(Partner, partner) or partners[0]
     token = auth.partner_token(current.partner_id, current.name)
+    rows = trace.entries(db, trace.last_session(db))
     return render(
         request,
         "px_showcase.html",
@@ -46,6 +47,8 @@ def showcase(request: Request, partner: str = "mts-link-1", db: Session = Depend
         partners=partners,
         current=current,
         token=token,
+        trace=rows,
+        covered=trace.coverage(rows),
     )
 
 
@@ -71,8 +74,7 @@ def embed(request: Request, token: str = "", mode: str = ""):
 # ---- Resource Catalog and PX mocks ---------------------------------------------
 
 
-@router.get("/rc/qos_catalog")
-def qos_catalog(db: Session = Depends(get_session)):
+def catalog(db: Session) -> dict:
     tariffs = db.exec(
         select(Tariff).where(Tariff.status == "ACTIVE").order_by(Tariff.bitrate_mbps)
     ).all()
@@ -97,9 +99,7 @@ def qos_catalog(db: Session = Depends(get_session)):
     return body
 
 
-@router.post("/px/reg")
-async def px_reg(request: Request, db: Session = Depends(get_session)):
-    data = await request.json()
+def register(db: Session, data: dict) -> str:
     numbers = [
         int(p.partner_id.split("-")[-1])
         for p in db.exec(select(Partner))
@@ -109,18 +109,31 @@ async def px_reg(request: Request, db: Session = Depends(get_session)):
     db.add(Partner(partner_id=partner_id, name=str(data.get("company") or partner_id)))
     db.commit()
     _log(db, partner_id, "px_reg", "POST", "/px/reg", data, {"id": partner_id})
-    return {"id": partner_id}
+    return partner_id
 
 
-@router.post("/px/save_qos")
-async def px_save_qos(request: Request, db: Session = Depends(get_session)):
-    data = await request.json()
+def save_qos(db: Session, data: dict) -> dict:
     count = (
         len(db.exec(select(NetworkRequest).where(NetworkRequest.kind == "px_save_qos")).all()) + 1
     )
     body = {"id": f"qos_profiles-{count}"}
     _log(db, str(data.get("client_id", "-")), "px_save_qos", "POST", "/px/save_qos", data, body)
     return body
+
+
+@router.get("/rc/qos_catalog")
+def qos_catalog(db: Session = Depends(get_session)):
+    return catalog(db)
+
+
+@router.post("/px/reg")
+async def px_reg(request: Request, db: Session = Depends(get_session)):
+    return {"id": register(db, await request.json())}
+
+
+@router.post("/px/save_qos")
+async def px_save_qos(request: Request, db: Session = Depends(get_session)):
+    return save_qos(db, await request.json())
 
 
 @router.post("/px/price")

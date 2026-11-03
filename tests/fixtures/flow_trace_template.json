@@ -1,0 +1,29 @@
+{
+  "_comment": "Эталон трассировки сообщений (реплики 1-17 диаграммы кейса). Каждая запись: номер, направление, метод+путь, кто кого вызывает. Журнал приложения должен содержать все 17 в этом порядке (в пределах шага порядок реплик может быть логическим: запросы вперёд, ответы назад).",
+  "flow": [
+    { "seq": 1,  "from": "Service Provider", "to": "Partner Landing", "message": "GET /qos_platform/landing" },
+    { "seq": 2,  "from": "Partner Landing", "to": "Customer Journey", "message": "GET /cj/qos_platform (empty)" },
+    { "seq": 3,  "from": "Customer Journey", "to": "Partner Landing", "message": "content: HTML landing (form company / contact / traffic)" },
+    { "seq": 4,  "from": "Partner Landing", "to": "Service Provider", "message": "200 text/html" },
+    { "seq": 5,  "from": "Service Provider", "to": "Partner Landing", "message": "POST /qos_platform/reg (form: company, contact, traffic)" },
+    { "seq": 6,  "from": "Partner Landing", "to": "Customer Journey", "message": "POST /cj/qos_platform (user = «отправил форму {...}»)" },
+    { "seq": 7,  "from": "Customer Journey", "to": "Partner eXperience", "message": "POST /px/reg (partners, {company, contact, traffic})" },
+    { "seq": 8,  "from": "Partner eXperience", "to": "Customer Journey", "message": "200 {\"id\": \"partners-1\"} — client_id партнёра" },
+    { "seq": 9,  "from": "Customer Journey", "to": "Resource Catalog", "message": "GET /rc/qos_catalog" },
+    { "seq": 10, "from": "Resource Catalog", "to": "Customer Journey", "message": "[{Gold, 50 Mbit/s}, {Silver, 30 Mbit/s}, ...]" },
+    { "seq": 11, "from": "Customer Journey", "to": "Partner Landing", "message": "content: HTML «выбор QoS-профиля»" },
+    { "seq": 12, "from": "Partner Landing", "to": "Service Provider", "message": "200 text/html" },
+    { "seq": 13, "from": "Service Provider", "to": "Partner Landing", "message": "POST /qos_platform form: client_id=partners-1, profile=Gold" },
+    { "seq": 14, "from": "Partner Landing", "to": "Customer Journey", "message": "POST /cj/qos_platform (user = «отправил форму {...}»)" },
+    { "seq": 15, "from": "Customer Journey", "to": "Partner eXperience", "message": "POST /px/save_qos (qos_profiles, {client_id, profile})" },
+    { "seq": 16, "from": "Partner eXperience", "to": "Customer Journey", "message": "{\"id\": \"qos_profiles-1\"}" },
+    { "seq": 17, "from": "Customer Journey", "to": "Partner Landing", "message": "content: HTML «Партнёр подключён» (client_id, Gold, SLA 99.9% из каталога)" }
+  ],
+  "mapping_to_prototype": {
+    "Service Provider": "браузер партнёра",
+    "Partner Landing": "приложение A (витрина PX) — фасад",
+    "Customer Journey": "bff-роуты приложения A (оркестратор)",
+    "Resource Catalog": "приложение B: GET /rc/qos_catalog",
+    "Partner eXperience": "приложение B: /px/reg, /px/save_qos"
+  }
+}

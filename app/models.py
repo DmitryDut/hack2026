@@ -135,3 +135,15 @@ class Offer(SQLModel, table=True):
     name: str
     items: list = Field(default_factory=list, sa_column=Column(JSON))
     created_at: datetime = Field(default_factory=now)
+
+
+class TraceEntry(SQLModel, table=True):
+    """One message of the storefront flow from the task diagram (docs/ui/06-landing-flow.md)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    session: str = Field(index=True)
+    seq: int
+    sender: str
+    receiver: str
+    message: str
+    created_at: datetime = Field(default_factory=now)

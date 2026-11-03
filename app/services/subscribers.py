@@ -1,9 +1,9 @@
 import json
 import re
-import secrets
 
 from sqlmodel import Session, select
 
+from app.mocks import gsma
 from app.models import Assignment, Service, Subscriber, Tariff
 from app.services import sandbox
 from app.services.sandbox import RuleError
@@ -29,8 +29,9 @@ def connect(db: Session, service: Service, raw_msisdn: str) -> Assignment:
     ).first():
         raise RuleError("Этот сервис уже подключён абоненту")
     tariff = db.get(Tariff, service.tariff_code)
-    assignment_id = f"asg-{secrets.token_hex(2)}"
     request = {"device": {"phoneNumber": msisdn}, "qosProfile": tariff.code}
+    created = gsma.create_assignment(request)
+    assignment_id = created["assignmentId"]
     sandbox.net(
         db,
         service,
@@ -38,10 +39,11 @@ def connect(db: Session, service: Service, raw_msisdn: str) -> Assignment:
         "POST",
         "/mock-gsma/qos-assignments",
         request,
-        {"assignmentId": assignment_id, "status": "REQUESTED"},
+        created,
         201,
     )
     sandbox.log(db, service, "assignment_requested", msisdn=msisdn, assignment_id=assignment_id)
+    confirmed = gsma.get_assignment(assignment_id)
     sandbox.net(
         db,
         service,
@@ -49,7 +51,7 @@ def connect(db: Session, service: Service, raw_msisdn: str) -> Assignment:
         "GET",
         f"/mock-gsma/qos-assignments/{assignment_id}",
         {},
-        {"assignmentId": assignment_id, "status": "AVAILABLE"},
+        confirmed,
     )
     sandbox.log(db, service, "assignment_available", msisdn=msisdn, assignment_id=assignment_id)
     row = Assignment(

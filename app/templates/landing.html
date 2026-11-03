@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_trace.html" import panel %}
+{% block title %}Приоритет для вашего трафика{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Приоритет для вашего трафика</h1>
+  <p class="lead">Оставьте данные компании — мы подключим вас и предложим тариф качества.</p></div>
+<div class="card" style="max-width:560px">
+  {% if error %}<div class="flash flash-error">{{ error }}</div>{% endif %}
+  <form method="post" action="/qos_platform/reg">
+    <input type="hidden" name="session" value="{{ session }}">
+    <div class="field"><label>Компания</label><input type="text" name="company" value="{{ (form or {}).get('company', '') }}" placeholder="ООО «Ромашка»"></div>
+    <div class="field"><label>Контакт</label><input type="text" name="contact" value="{{ (form or {}).get('contact', '') }}" placeholder="name@company.ru"></div>
+    <div class="field"><label>Трафик</label><select name="traffic">{% for t in ['Видеосвязь', 'Чаты', 'Потоковое видео', 'API'] %}<option>{{ t }}</option>{% endfor %}</select></div>
+    <button class="btn" type="submit">Отправить</button>
+  </form>
+</div>
+{{ panel(trace, covered) }}
+{% endblock %}

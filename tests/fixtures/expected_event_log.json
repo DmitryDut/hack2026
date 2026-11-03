@@ -1,0 +1,27 @@
+{
+  "_comment": "Эталон журнала событий (EventLog) после полного демо-прогона. Порядок сверху вниз; timestamp — по возрастанию (значения условные). Поля id/created_at могут отличаться, event и sequence — нет.",
+  "events": [
+    { "seq": 1, "entity_type": "test_run", "event": "run_started", "details": { "service_id": "svc-vcs", "steps_created": 4, "from_status": "draft", "to_status": "in_testing" } },
+    { "seq": 2, "entity_type": "test_step", "event": "step_checked", "details": { "signature_id": "sig-1", "result": "success" } },
+    { "seq": 3, "entity_type": "test_step", "event": "step_confirmed", "details": { "signature_id": "sig-1", "by_user": true } },
+    { "seq": 4, "entity_type": "test_step", "event": "step_checked", "details": { "signature_id": "sig-2", "result": "success" } },
+    { "seq": 5, "entity_type": "test_step", "event": "step_confirmed", "details": { "signature_id": "sig-2", "by_user": true } },
+    { "seq": 6, "entity_type": "test_step", "event": "step_checked", "details": { "signature_id": "sig-3", "result": "success" } },
+    { "seq": 7, "entity_type": "test_step", "event": "step_confirmed", "details": { "signature_id": "sig-3", "by_user": true } },
+    { "seq": 8, "entity_type": "test_step", "event": "step_checked", "details": { "signature_id": "sig-4", "result": "error", "error_code": "BEARER_TIMEOUT" } },
+    { "seq": 9, "entity_type": "test_run", "event": "run_failed", "details": { "service_id": "svc-vcs", "reason": "step_error", "from_status": "in_testing", "to_status": "failed" } },
+    { "seq": 10, "entity_type": "test_run", "event": "run_reset", "details": { "service_id": "svc-vcs", "reason": "signature_modified", "signature_id": "sig-4", "from_status": "failed", "to_status": "draft" } },
+    { "seq": 11, "entity_type": "signature", "event": "signature_updated", "details": { "signature_id": "sig-4", "changes": { "port": { "old": 5005, "new": 5006 } } } },
+    { "seq": 12, "entity_type": "test_run", "event": "run_started", "details": { "service_id": "svc-vcs", "steps_created": 4, "from_status": "draft", "to_status": "in_testing" } },
+    { "seq": 13, "entity_type": "test_step", "event": "step_checked", "details": { "signature_id": "sig-1", "result": "success" } },
+    { "seq": 14, "entity_type": "test_step", "event": "step_confirmed", "details": { "signature_id": "sig-1", "by_user": true } },
+    { "seq": 15, "entity_type": "test_step", "event": "step_checked", "details": { "signature_id": "sig-2", "result": "success" } },
+    { "seq": 16, "entity_type": "test_step", "event": "step_confirmed", "details": { "signature_id": "sig-2", "by_user": true } },
+    { "seq": 17, "entity_type": "test_step", "event": "step_checked", "details": { "signature_id": "sig-3", "result": "success" } },
+    { "seq": 18, "entity_type": "test_step", "event": "step_confirmed", "details": { "signature_id": "sig-3", "by_user": true } },
+    { "seq": 19, "entity_type": "test_step", "event": "step_checked", "details": { "signature_id": "sig-4", "result": "success" } },
+    { "seq": 20, "entity_type": "test_step", "event": "step_confirmed", "details": { "signature_id": "sig-4", "by_user": true } },
+    { "seq": 21, "entity_type": "test_run", "event": "run_passed", "details": { "service_id": "svc-vcs", "from_status": "in_testing", "to_status": "passed" } },
+    { "seq": 22, "entity_type": "service", "event": "applied_to_production", "details": { "service_id": "svc-vcs", "session_id": "qod-session-8f3a2b", "from_status": "passed", "to_status": "applied" } }
+  ]
+}

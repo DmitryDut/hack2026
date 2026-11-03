@@ -1,0 +1,52 @@
+{
+  "_comment": "Контракт мока GSMA QoD APIgw. Задержка имитируется 300-800 мс.",
+  "validate": {
+    "method": "POST",
+    "path": "/mock-gsma/validate",
+    "request": {
+      "signature": { "ipv4": "10.10.1.5", "uri": "vcs.mts-link.ru", "port": 443, "protocol": "HTTPS" },
+      "qos_profile_code": "PLATINUM",
+      "duration_code": "12H"
+    },
+    "response_success": {
+      "status": 200,
+      "body": { "result": "success", "latency_ms": 412, "checked_at": "2026-10-30T12:00:00Z" }
+    },
+    "response_error": {
+      "status": 200,
+      "body": {
+        "result": "error",
+        "error_code": "BEARER_TIMEOUT",
+        "error_message": "RTP-поток не отвечает: таймаут установки dedicated bearer для media2.mts-link.ru:5005",
+        "checked_at": "2026-10-30T12:00:00Z"
+      },
+      "_note": "result=error приходит с HTTP 200 — это результат проверки, а не сбой API"
+    }
+  },
+  "create_session": {
+    "method": "POST",
+    "path": "/mock-gsma/qod/sessions",
+    "request": {
+      "partner_id": "mts-link-1",
+      "service": "Link ВКС",
+      "qos_profile": { "code": "PLATINUM", "bitrate_mbps": 100 },
+      "duration": { "code": "12H", "hours": 12 },
+      "signatures": [
+        { "ipv4": "10.10.1.5", "uri": "vcs.mts-link.ru", "port": 443, "protocol": "HTTPS" },
+        { "ipv4": "10.10.1.6", "uri": "media.mts-link.ru", "port": 5004, "protocol": "RTP" },
+        { "ipv4": "10.10.1.7", "uri": "api.mts-link.ru", "port": 8443, "protocol": "HTTPS" },
+        { "ipv4": "10.10.1.8", "uri": "media2.mts-link.ru", "port": 5006, "protocol": "RTP" }
+      ]
+    },
+    "response": {
+      "status": 201,
+      "body": {
+        "session_id": "qod-session-8f3a2b",
+        "status": "ACTIVE",
+        "started_at": "2026-10-30T12:05:00Z",
+        "expires_at": "2026-10-31T00:05:00Z",
+        "qos_profile": "PLATINUM"
+      }
+    }
+  }
+}
