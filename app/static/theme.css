@@ -189,3 +189,12 @@ details summary:hover { color: var(--text); }
   -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 2 4 14h7l-1 8 9-12h-7z'/%3E%3C/svg%3E") center / contain no-repeat;
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M13 2 4 14h7l-1 8 9-12h-7z'/%3E%3C/svg%3E") center / contain no-repeat; }
 .bolt-sm { width: 18px; height: 18px; }
+
+.fields-row { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); align-items: start; }
+.fields-row .field { margin: 0; }
+
+.table-flush th, .table-flush td { padding-left: 12px; padding-right: 12px; }
+.table-flush th:first-child, .table-flush td:first-child { padding-left: 0; }
+.table-flush th:last-child, .table-flush td:last-child { padding-right: 0; }
+.table td.num .btn-quiet { padding: 0 8px; }
+.table td.num form.inline { margin-left: 0; }

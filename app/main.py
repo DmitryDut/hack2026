@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from app.db import init_db
 from app.services.auth import NeedLogin, current_user
 from app.templating import render
-from app.web import auth, cabinet, operator, subscriber
+from app.web import admin, auth, cabinet, operator, subscriber
 
 BASE_DIR = Path(__file__).parent
 
@@ -21,7 +21,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(title="Качество связи по требованию (POC)", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
-for module in (auth, cabinet, operator, subscriber):
+for module in (auth, cabinet, operator, subscriber, admin):
     app.include_router(module.router)
 
 

@@ -1,0 +1,16 @@
+{% macro control(f, value, error) %}
+<div class="field">
+  <label>{{ f.title }}{% if f.required %} <span class="muted">*</span>{% endif %}</label>
+  {% if f.kind == 'select' %}
+    <select name="{{ f.name }}">
+      {% if not f.required %}<option value=""></option>{% endif %}
+      {% for o in f.options %}<option value="{{ o }}" {{ 'selected' if (value if value not in (none, '') else f.default)|string == o|string }}>{{ o }}</option>{% endfor %}
+    </select>
+  {% elif f.kind == 'checkbox' %}
+    <input type="checkbox" name="{{ f.name }}" {{ 'checked' if value }} style="width:auto;height:auto;accent-color:var(--mts-red)">
+  {% else %}
+    <input type="text" name="{{ f.name }}" value="{{ '' if value is none else value }}" placeholder="{{ f.placeholder }}">
+  {% endif %}
+  {% if error %}<div class="field-error">{{ error }}</div>{% endif %}
+</div>
+{% endmacro %}

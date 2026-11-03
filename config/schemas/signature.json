@@ -1,0 +1,11 @@
+{
+  "title": "Сигнатура",
+  "type": "object",
+  "properties": {
+    "ipv4": {"type": "string", "title": "IPv4", "format": "ipv4", "x-error": "Неверный адрес IPv4", "x-placeholder": "10.10.2.10"},
+    "uri": {"type": "string", "title": "URI", "x-error": "Укажите URI", "x-placeholder": "api.example.ru"},
+    "port": {"type": "integer", "title": "Порт", "minimum": 1, "maximum": 65535, "x-error": "Порт должен быть от 1 до 65535", "x-placeholder": "8443"},
+    "protocol": {"type": "string", "title": "Протокол", "x-ref": "protocol", "x-error": "Недопустимый протокол", "default": "HTTPS"}
+  },
+  "required": ["ipv4", "uri", "port", "protocol"]
+}

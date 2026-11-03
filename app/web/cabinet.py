@@ -14,7 +14,7 @@ from app.models import (
     Signature,
     Tariff,
 )
-from app.services import auth, pricing, sandbox, signatures, subscribers
+from app.services import auth, pricing, sandbox, schema_core, signatures, subscribers
 from app.services.sandbox import RuleError
 from app.templating import render
 from app.web.common import own_service, redirect, view
@@ -60,36 +60,49 @@ def dashboard(
 
 
 @router.get("/services/new")
-def new_service_page(request: Request, user=Depends(auth.require_partner)):
-    return render(request, "cabinet/new_service.html", user=user, nav="cabinet")
+def new_service_page(
+    request: Request, user=Depends(auth.require_partner), db: Session = Depends(get_session)
+):
+    return render(
+        request,
+        "cabinet/new_service.html",
+        user=user,
+        nav="cabinet",
+        fields=schema_core.fields(db, "service"),
+        values={},
+        errors={},
+    )
 
 
 @router.post("/services/new")
-def create_service(
-    request: Request,
-    name: str = Form(""),
-    description: str = Form(""),
-    user=Depends(auth.require_partner),
-    db: Session = Depends(get_session),
+async def create_service(
+    request: Request, user=Depends(auth.require_partner), db: Session = Depends(get_session)
 ):
-    if not name.strip():
+    sch = schema_core.schema(db, "service")
+    raw = dict(await request.form())
+    data = schema_core.coerce_all(sch, raw)
+    errors = schema_core.validate(sch, data)
+    if errors:
         return render(
             request,
             "cabinet/new_service.html",
             user=user,
             nav="cabinet",
             status_code=422,
-            error="Укажите название услуги",
-            description=description,
+            fields=schema_core.fields(db, "service"),
+            values=raw,
+            errors=errors,
         )
+    core, extra = schema_core.split("service", data)
     numbers = [
         int(s.id.split("-")[-1]) for s in db.exec(select(Service)) if s.id.split("-")[-1].isdigit()
     ]
     service = Service(
         id=f"svc-{max(numbers, default=0) + 1}",
         partner_id=user["partner_id"],
-        name=name.strip(),
-        description=description.strip(),
+        name=core["name"],
+        description=core.get("description", ""),
+        extra=extra,
     )
     db.add(service)
     db.add(ServiceState(service_id=service.id))
@@ -173,7 +186,9 @@ def _render_card(request, db, user, service_id, tab="data", edit=None, status_co
         locked=locked,
         sigs=sigs,
         edit=edit,
-        protocols=signatures.protocols(),
+        sig_fields=schema_core.fields(db, "signature"),
+        svc_fields=schema_core.fields(db, "service"),
+        value_of=schema_core.value_of,
         tariffs=tariffs,
         durations=durations,
         status_code=status_code,
@@ -182,27 +197,19 @@ def _render_card(request, db, user, service_id, tab="data", edit=None, status_co
     )
 
 
-def _form(**values) -> dict:
-    return {k: (v or "") for k, v in values.items()}
-
-
 @router.post("/services/{service_id}/signatures")
-def add_signature(
+async def add_signature(
     request: Request,
     service_id: str,
-    ipv4: str = Form(""),
-    uri: str = Form(""),
-    port: str = Form(""),
-    protocol: str = Form(""),
     user=Depends(auth.require_partner),
     db: Session = Depends(get_session),
 ):
     service = own_service(db, user, service_id)
-    data = _form(ipv4=ipv4, uri=uri, port=port, protocol=protocol)
-    errors = signatures.validate(db, service.id, data)
+    raw = dict(await request.form())
+    data, errors = signatures.validate(db, service.id, raw)
     if errors:
         return _render_card(
-            request, db, user, service_id, "data", status_code=422, sig_errors=errors, sig_form=data
+            request, db, user, service_id, "data", status_code=422, sig_errors=errors, sig_form=raw
         )
     try:
         signatures.add(db, service, data)
@@ -212,14 +219,10 @@ def add_signature(
 
 
 @router.post("/services/{service_id}/signatures/{sig_id}")
-def update_signature(
+async def update_signature(
     request: Request,
     service_id: str,
     sig_id: str,
-    ipv4: str = Form(""),
-    uri: str = Form(""),
-    port: str = Form(""),
-    protocol: str = Form(""),
     user=Depends(auth.require_partner),
     db: Session = Depends(get_session),
 ):
@@ -227,8 +230,8 @@ def update_signature(
     sig = db.get(Signature, sig_id)
     if sig is None or sig.service_id != service.id:
         return redirect(_tab_url(service_id, "data"), error="Сигнатура не найдена")
-    data = _form(ipv4=ipv4, uri=uri, port=port, protocol=protocol)
-    errors = signatures.validate(db, service.id, data, exclude_id=sig_id)
+    raw = dict(await request.form())
+    data, errors = signatures.validate(db, service.id, raw, exclude_id=sig_id)
     if errors:
         return _render_card(
             request,
@@ -239,7 +242,7 @@ def update_signature(
             edit=sig_id,
             status_code=422,
             sig_errors=errors,
-            sig_form=data,
+            sig_form=raw,
         )
     try:
         signatures.update(db, service, sig, data)
@@ -250,6 +253,36 @@ def update_signature(
         _tab_url(service_id, "data"),
         ok="Сигнатура изменена" + (". Тестирование сброшено" if reset else ""),
     )
+
+
+@router.post("/services/{service_id}/params")
+async def update_params(
+    request: Request,
+    service_id: str,
+    user=Depends(auth.require_partner),
+    db: Session = Depends(get_session),
+):
+    service = own_service(db, user, service_id)
+    sch = schema_core.schema(db, "service")
+    raw = dict(await request.form())
+    data = schema_core.coerce_all(sch, raw)
+    errors = schema_core.validate(sch, data)
+    if errors:
+        return _render_card(
+            request, db, user, service_id, "data", status_code=422, svc_errors=errors, svc_form=raw
+        )
+    try:
+        sandbox.guard_change(db, service)
+    except RuleError as exc:
+        return redirect(_tab_url(service_id, "data"), error=str(exc))
+    core, extra = schema_core.split("service", data)
+    service.name, service.description = core.get("name", service.name), core.get("description", "")
+    service.extra = extra
+    db.add(service)
+    db.commit()
+    sandbox.log(db, service, "service_updated", fields=sorted(data))
+    db.commit()
+    return redirect(_tab_url(service_id, "data"), ok="Параметры услуги сохранены")
 
 
 @router.post("/services/{service_id}/signatures/{sig_id}/delete")

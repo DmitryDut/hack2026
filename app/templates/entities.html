@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_fields.html" import control %}
+{% block title %}Справочники{% endblock %}
+{% block content %}
+{% set form = form|default({}) %}{% set errors = errors|default({}) %}
+<div class="page-head"><h1>Справочники</h1><p class="lead">Тарифы, сроки и любые типы, созданные в редакторе схем. Новая запись сразу доступна партнёрам.</p></div>
+<div class="tabs">
+  {% for d in defs %}<a href="/entities/{{ d.type }}" class="{{ 'active' if d.type == type_ }}">{{ d.title }}</a>{% endfor %}
+  <a href="/admin/schemas" style="margin-left:auto">Редактор схем →</a>
+</div>
+
+<div class="card" style="padding:16px 24px 8px">
+{% if rows %}
+<table class="table table-flush">
+  <thead><tr>{% for f in fields %}<th{% if f.type in ('integer','number') %} class="num"{% endif %}>{{ f.title }}</th>{% endfor %}<th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    {% if edit == r.id %}
+    <tr><td colspan="{{ fields|length + 1 }}">
+      <form method="post" action="/entities/{{ type_ }}/{{ r.id }}">
+        <div class="fields-row">{% for f in fields %}{% if f.name == 'code' and type_ in ('tariff','duration') %}
+          <div class="field"><label>{{ f.title }}</label><input type="text" value="{{ r[f.name] }}" disabled></div>
+        {% else %}{{ control(f, form.get(f.name, r.get(f.name)), errors.get(f.name)) }}{% endif %}{% endfor %}</div>
+        {% if errors.get('_') %}<div class="field-error" style="margin-top:12px">{{ errors['_'] }}</div>{% endif %}
+        <div class="actions" style="margin-top:16px"><button class="btn btn-sm" type="submit">Сохранить</button><a class="btn btn-quiet btn-sm" href="/entities/{{ type_ }}">Отмена</a></div>
+      </form>
+    </td></tr>
+    {% else %}
+    <tr>
+      {% for f in fields %}{% set val = r.get(f.name) %}<td{% if f.type in ('integer','number') %} class="num"{% endif %}>{% if val in (none, '') %}<span class="muted">—</span>{% elif f.kind == 'checkbox' %}{{ 'да' if val else 'нет' }}{% else %}{{ val }}{% endif %}</td>{% endfor %}
+      <td class="num">
+        <a class="btn btn-quiet btn-sm" href="/entities/{{ type_ }}?edit={{ r.id }}">Изменить</a>
+        <form class="inline" method="post" action="/entities/{{ type_ }}/{{ r.id }}/delete" onsubmit="return confirm('Удалить запись?')"><button class="btn btn-quiet btn-sm" type="submit">Удалить</button></form>
+      </td>
+    </tr>
+    {% endif %}
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="empty">Записей пока нет.</div>{% endif %}
+</div>
+
+{% if not edit %}
+<div class="card section" style="margin-top:24px">
+  <h3 style="margin-bottom:20px">Добавить: {{ title|lower }}</h3>
+  <form method="post" action="/entities/{{ type_ }}">
+    <div class="fields-row">{% for f in fields %}{{ control(f, form.get(f.name), errors.get(f.name)) }}{% endfor %}</div>
+    {% if errors.get('_') %}<div class="field-error" style="margin-top:12px">{{ errors['_'] }}</div>{% endif %}
+    <div style="margin-top:20px"><button class="btn" type="submit">Добавить</button></div>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

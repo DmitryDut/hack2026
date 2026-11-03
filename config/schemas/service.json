@@ -1,0 +1,9 @@
+{
+  "title": "Услуга",
+  "type": "object",
+  "properties": {
+    "name": {"type": "string", "title": "Название", "minLength": 1},
+    "description": {"type": "string", "title": "Описание"}
+  },
+  "required": ["name"]
+}

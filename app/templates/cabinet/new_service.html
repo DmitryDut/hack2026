@@ -1,13 +1,12 @@
 {% extends "base.html" %}
+{% from "_fields.html" import control %}
 {% block title %}Новая услуга{% endblock %}
 {% block content %}
 <div class="crumbs"><a href="/cabinet">Услуги</a> / Новая услуга</div>
 <div class="page-head"><h1>Новая услуга</h1><p class="lead">Опишите сервис, трафику которого нужен приоритет. Адреса и порты вы добавите на следующем шаге.</p></div>
 <div class="card" style="max-width:560px">
-  {% if error %}<div class="flash flash-error">{{ error }}</div>{% endif %}
   <form method="post" action="/cabinet/services/new">
-    <div class="field"><label for="name">Название</label><input id="name" name="name" type="text" placeholder="Например, Link Записи" required></div>
-    <div class="field"><label for="description">Описание</label><input id="description" name="description" type="text" value="{{ description or '' }}"></div>
+    {% for f in fields %}{{ control(f, values.get(f.name), errors.get(f.name)) }}{% endfor %}
     <div class="actions"><button class="btn" type="submit">Создать</button><a class="btn btn-quiet" href="/cabinet">Отмена</a></div>
   </form>
 </div>

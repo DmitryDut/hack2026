@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Схемы{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Редактор схем</h1><p class="lead">Модель данных и формы описаны JSON-схемой. Добавьте поле — форма и таблица обновятся без разработки.</p></div>
+<div class="grid" style="grid-template-columns: 240px 1fr; gap: 32px; align-items: start">
+  <div>
+    <div class="caption" style="margin-bottom:12px">Типы</div>
+    {% for d in defs %}<a href="/admin/schemas?type={{ d.type }}" style="display:block;padding:10px 14px;border-radius:8px;{{ 'background:var(--bg-subtle);font-weight:500' if d.type == current.type }}">{{ d.title }} <span class="muted small mono">{{ d.type }}</span></a>{% endfor %}
+    <form method="post" action="/admin/schemas" style="margin-top:28px">
+      <div class="caption" style="margin-bottom:12px">Новый тип</div>
+      <div class="field"><input type="text" name="type_id" placeholder="monitoring"></div>
+      <div class="field"><input type="text" name="title" placeholder="Мониторинг"></div>
+      <button class="btn btn-secondary btn-sm" type="submit">Создать</button>
+    </form>
+    <form method="post" action="/admin/config/reload" style="margin-top:28px"><button class="btn btn-quiet btn-sm" type="submit">Перечитать YAML-конфиг</button></form>
+  </div>
+  <div class="card">
+    <div class="section-head" style="margin-top:0"><h2>{{ current.title }} <span class="muted small mono">{{ current.type }}</span></h2>
+      <span class="hint">{% if count is not none %}Записей: {{ count }}{% endif %}</span></div>
+    {% if problems %}<div class="flash flash-error">{% for p in problems %}{{ p }}{% if not loop.last %}<br>{% endif %}{% endfor %}</div>{% endif %}
+    <form method="post" action="/admin/schemas/{{ current.type }}">
+      <textarea name="schema_text" spellcheck="false" style="width:100%;min-height:420px;font:13px/1.55 ui-monospace,Menlo,monospace;padding:16px;border:1px solid var(--border);border-radius:8px;resize:vertical">{{ text }}</textarea>
+      <p class="hint" style="margin:12px 0 20px">Типы полей: string, integer, number, boolean. Ограничения: minimum, maximum, pattern, enum, format (ipv4, ipv6). Свои ключи: <span class="mono">x-error</span> — текст ошибки, <span class="mono">x-placeholder</span>, <span class="mono">x-ref</span>. Базовые поля встроенных типов удалить нельзя.</p>
+      <div class="actions"><button class="btn" type="submit">Сохранить схему</button>
+        {% if not current.builtin %}</div></form><form method="post" action="/admin/schemas/{{ current.type }}/delete" onsubmit="return confirm('Удалить тип и все его записи?')" style="margin-top:16px"><button class="btn btn-quiet btn-sm" type="submit">Удалить тип</button></form>{% else %}</div></form>{% endif %}
+    {% if current.builtin %}{% endif %}
+  </div>
+</div>
+{% endblock %}

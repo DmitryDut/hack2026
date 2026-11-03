@@ -7,7 +7,9 @@ def _value(factor: dict, tariff: Tariff, duration: Duration) -> float:
         return factor["const"]
     obj_name, attr = factor["field"].split(".", 1)
     obj = {"qos_profile": tariff, "duration": duration}[obj_name]
-    return getattr(obj, attr)
+    if attr in type(obj).model_fields:
+        return getattr(obj, attr)
+    return (obj.extra or {}).get(attr, 0)
 
 
 def price(tariff: Tariff | None, duration: Duration | None) -> int | None:

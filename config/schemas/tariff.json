@@ -1,0 +1,14 @@
+{
+  "title": "Тариф",
+  "type": "object",
+  "properties": {
+    "code": {"type": "string", "title": "Код", "pattern": "^[A-Z0-9_]{2,24}$", "x-error": "Код: заглавная латиница, цифры и _ (2–24 символа)", "x-placeholder": "DIAMOND_PLUS"},
+    "name": {"type": "string", "title": "Название", "minLength": 1, "x-placeholder": "Бриллиант+"},
+    "bitrate_mbps": {"type": "integer", "title": "Скорость до, Мбит/с", "minimum": 1},
+    "priority_level": {"type": "integer", "title": "Приоритет (1–10)", "minimum": 1, "maximum": 10},
+    "price_multiplier": {"type": "number", "title": "Коэффициент тарифа", "minimum": 0.01},
+    "sla_percent": {"type": "number", "title": "SLA, %", "minimum": 90, "maximum": 100},
+    "status": {"type": "string", "title": "Статус", "enum": ["ACTIVE", "INACTIVE"], "default": "ACTIVE"}
+  },
+  "required": ["code", "name", "bitrate_mbps", "priority_level", "price_multiplier", "sla_percent"]
+}

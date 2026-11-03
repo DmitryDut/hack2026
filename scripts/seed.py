@@ -5,6 +5,7 @@ from sqlmodel import Session, SQLModel
 from app.db import engine
 from app.models import (
     Duration,
+    EntityDef,
     Partner,
     Service,
     ServiceState,
@@ -12,6 +13,7 @@ from app.models import (
     Subscriber,
     Tariff,
 )
+from app.services import schema_core
 
 TARIFFS = [
     ("BRONZE", "Бронза", 10, 1, 1.0, 99.0),
@@ -48,6 +50,10 @@ def main() -> None:
     SQLModel.metadata.drop_all(engine)
     SQLModel.metadata.create_all(engine)
     with Session(engine) as db:
+        for type_, sch in schema_core.default_schemas().items():
+            db.add(
+                EntityDef(type=type_, title=sch.get("title", type_), json_schema=sch, builtin=True)
+            )
         db.add_all(
             Tariff(
                 code=c, name=n, bitrate_mbps=b, priority_level=p, price_multiplier=m, sla_percent=s
