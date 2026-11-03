@@ -1,0 +1,8 @@
+# Поведение мока проверки сигнатур (GSMA QoD API). Решение — по значениям сигнатуры.
+validate:
+  rules:
+    - match: {uri: media2.mts-link.ru, port: 5005}
+      result: error
+      error_code: BEARER_TIMEOUT
+      message: "RTP-поток не отвечает: таймаут установки dedicated bearer для media2.mts-link.ru:5005"
+  default: {result: success}

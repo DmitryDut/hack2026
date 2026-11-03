@@ -1,0 +1,8 @@
+# Цена услуги = произведение множителей (docs/SPEC.md §3, D15). Платина 12 ч = 100 × 100 × 3.0 × 1.0 = 30 000 ₽/мес.
+currency: RUB
+unit: per_month
+factors:
+  - {field: qos_profile.bitrate_mbps, label: "Мбит/с"}
+  - {const: 100, label: "₽ за Мбит/с"}
+  - {field: qos_profile.price_multiplier, label: "коэф. тарифа"}
+  - {field: duration.price_multiplier, label: "коэф. срока"}

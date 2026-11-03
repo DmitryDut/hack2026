@@ -1,0 +1,10 @@
+protocols:
+  - {code: RTP, layer: transport, transport: udp}
+  - {code: TCP, layer: transport, transport: tcp}
+  - {code: UDP, layer: transport, transport: udp}
+  - {code: HTTP, layer: application, transport: tcp}
+  - {code: HTTPS, layer: application, transport: tcp}
+  - {code: DNS, layer: application, transport: udp}
+  - {code: IMAP, layer: application, transport: tcp}
+  - {code: POP3, layer: application, transport: tcp}
+  - {code: SSH, layer: application, transport: tcp}

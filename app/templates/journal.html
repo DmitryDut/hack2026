@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Журнал{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Журнал</h1><p class="lead">События по услугам и обращения к внешним системам (моки). Время — по порядку, новые сверху.</p></div>
+<div class="section-head"><h2>События</h2></div>
+<div class="card" style="padding:16px 24px 8px"><table class="table table-flush">
+  <thead><tr><th>Время</th><th>Услуга</th><th>Событие</th><th>Детали</th></tr></thead>
+  <tbody>{% for e, d in events %}<tr>
+    <td class="mono muted">{{ e.created_at|dtf }}</td><td>{{ names.get(e.service_id, e.service_id or '—') }}</td>
+    <td>{{ e.event|event_label }}<div class="sub mono">{{ e.event }}</div></td>
+    <td class="small muted">{% for k, val in d.items() if val not in (none, {}, '') %}{{ k }}: {{ val }}{{ ' · ' if not loop.last }}{% endfor %}</td>
+  </tr>{% else %}<tr><td colspan="4" class="empty">Событий пока нет.</td></tr>{% endfor %}</tbody></table></div>
+<div class="section"><div class="section-head"><h2>Внешние вызовы</h2></div>
+<div class="card">{% for c in calls %}
+  <details><summary><span class="mono muted">{{ c.created_at|dtf }}</span> · <strong>{{ c.kind }}</strong> · <span class="mono">{{ c.method }} {{ c.path }}</span> · {{ c.status_code }}</summary>
+    <div class="grid grid-2"><div><div class="caption">Запрос</div><pre class="code">{{ c.request|pretty }}</pre></div><div><div class="caption">Ответ</div><pre class="code">{{ c.response|pretty }}</pre></div></div></details>
+{% else %}<div class="empty">Вызовов пока нет.</div>{% endfor %}</div></div>
+{% endblock %}

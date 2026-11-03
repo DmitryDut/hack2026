@@ -1,0 +1,60 @@
+{% set applied = v.state.status == 'applied' %}
+<div class="section-head" style="margin-top:0"><h2>Тариф качества</h2></div>
+<form method="post" action="/cabinet/services/{{ v.service.id }}/tariff">
+  <div class="tariffs">
+  {% for r in rows %}
+    <label class="tariff">
+      <input type="radio" name="tariff_code" value="{{ r.t.code }}" data-base="{{ r.base }}" {{ 'checked' if v.service.tariff_code == r.t.code }} {{ 'disabled' if applied }} required>
+      <span class="t-name">{{ r.t.name }}</span>
+      <span class="t-speed">до {{ r.t.bitrate_mbps }} Мбит/с</span>
+      <span class="muted small t-sla">SLA {{ r.t.sla_percent }} %<br>коэф. ×{{ '%g'|format(r.t.price_multiplier) }}</span>
+      <span class="t-price"><span data-price>{{ r.price|rub if r.price is not none else '' }}</span> ₽<div class="muted small" style="font-family:var(--font-text);font-weight:400">в месяц</div></span>
+    </label>
+  {% endfor %}
+  </div>
+  <div class="field" style="max-width:360px;margin-top:28px">
+    <label for="dur">Срок действия приоритета</label>
+    <select name="duration_code" id="dur" {{ 'disabled' if applied }}>
+      {% for d in durations %}<option value="{{ d.code }}" data-mult="{{ d.price_multiplier }}" {{ 'selected' if (v.service.duration_code or '12H') == d.code }}>{{ d.hours }} ч · коэф. ×{{ '%g'|format(d.price_multiplier) }}</option>{% endfor %}
+    </select>
+  </div>
+  {% if not applied %}<button class="btn btn-secondary" type="submit">Применить выбор</button>{% endif %}
+</form>
+
+{% if v.tariff and v.duration %}
+<div class="card section">
+  <div class="caption">Стоимость услуги «{{ v.service.name }}»</div>
+  <div class="price-hero" style="margin-top:12px">{{ v.price|rub }}<span class="unit">₽ в месяц</span></div>
+  <div class="formula">
+    {% for b in breakdown %}{% if not loop.first %}<span>×</span>{% endif %}<span><b>{{ b.value }}</b> {{ b.label }}</span>{% endfor %}
+    <span>=</span><b>{{ v.price|rub }} ₽</b>
+  </div>
+  <dl class="kv" style="margin-top:28px">
+    <dt>Тариф</dt><dd>{{ v.tariff.name }} · до {{ v.tariff.bitrate_mbps }} Мбит/с</dd>
+    <dt>Гарантия SLA</dt><dd>{{ v.tariff.sla_percent }} %</dd>
+    <dt>Срок приоритета</dt><dd>{{ v.duration.hours }} ч</dd>
+  </dl>
+  <div class="actions" style="margin-top:32px">
+    {% if v.service.price_confirmed %}
+      <span class="badge badge-success">Цена подтверждена</span>
+      {% if not applied %}<a class="btn" href="?tab=test">Перейти к тестированию</a>{% endif %}
+    {% else %}
+      <form method="post" action="/cabinet/services/{{ v.service.id }}/confirm-price" class="inline"><button class="btn" type="submit">Подтвердить цену</button></form>
+      <span class="hint">Без подтверждения тестирование недоступно</span>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+<script>
+  (function () {
+    var fmt = new Intl.NumberFormat('ru-RU');
+    function recalc() {
+      var m = parseFloat(document.querySelector('#dur option:checked').dataset.mult);
+      document.querySelectorAll('.tariff input').forEach(function (i) {
+        i.closest('.tariff').querySelector('[data-price]').textContent = fmt.format(Math.round(parseFloat(i.dataset.base) * m));
+      });
+    }
+    document.getElementById('dur').addEventListener('change', recalc);
+    recalc();
+  })();
+</script>

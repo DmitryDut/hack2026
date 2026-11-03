@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Вход{% endblock %}
+{% block content %}
+<div class="auth">
+  <div class="card auth-card">
+    <h1>Вход для партнёров</h1>
+    <p class="muted" style="margin-bottom:32px">Управляйте качеством связи для ваших сервисов: тарифы, тестирование и включение приоритета.</p>
+    {% if error %}<div class="flash flash-error">{{ error }}</div>{% endif %}
+    <form method="post" action="/login">
+      <div class="field"><label for="login">Логин</label><input id="login" name="login" type="text" value="{{ login or '' }}" autocomplete="username" required></div>
+      <div class="field"><label for="password">Пароль</label><input id="password" name="password" type="password" autocomplete="current-password" required></div>
+      <button class="btn" style="width:100%" type="submit">Войти</button>
+    </form>
+    {% if demo %}
+    <div class="demo-hint">
+      <div class="caption" style="margin-bottom:8px">Демо-доступ</div>
+      {% for acc in demo %}
+      <div class="row">
+        <span>{{ acc.name }} <span class="muted mono">{{ acc.login }} / {{ acc.password }}</span></span>
+        <button type="button" class="btn btn-quiet btn-sm" onclick="document.getElementById('login').value='{{ acc.login }}';document.getElementById('password').value='{{ acc.password }}';document.querySelector('form').submit()">Войти</button>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

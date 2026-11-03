@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ v.service.name }}{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="/cabinet">Услуги</a> / {{ v.service.name }}</div>
+<div class="page-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px">
+  <div><h1>{{ v.service.name }}</h1><p class="lead">{{ v.service.description or 'Без описания' }}</p></div>
+  <span class="badge {{ v.css }}" style="margin-top:8px">{{ v.label }}</span>
+</div>
+<div class="tabs">
+  {% for key, title in tabs %}
+    {% if locked.get(key) %}<span class="locked" title="{{ locked[key] }}">{{ title }}</span>
+    {% else %}<a href="?tab={{ key }}" class="{{ 'active' if tab == key }}">{{ title }}</a>{% endif %}
+  {% endfor %}
+</div>
+{% include "cabinet/_tab_" ~ tab ~ ".html" %}
+{% endblock %}

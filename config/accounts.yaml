@@ -1,0 +1,7 @@
+# Демо-учётки (мок авторизации). Пароли-заглушки: репозиторий публичный.
+session_ttl_hours: 8
+show_demo_hint: true
+accounts:
+  - {login: mts-link-1, password: demo, role: partner, partner_id: mts-link-1, name: "MTS Link"}
+  - {login: other-partner, password: demo, role: partner, partner_id: other-partner, name: "Другой партнёр"}
+  - {login: operator, password: demo, role: operator, name: "Оператор МТС"}

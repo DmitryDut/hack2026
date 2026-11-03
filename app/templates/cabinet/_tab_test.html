@@ -1,0 +1,53 @@
+{% set st = v.state.status %}
+{% set idx = {'draft': 0, 'in_testing': 1, 'failed': 1, 'passed': 2, 'applied': 3}[st] %}
+<div class="stepper">
+  {% for title in ['Подготовка', 'Тестирование', 'Тест пройден', 'Приоритет включён'] %}
+    <div class="step {{ 'done' if loop.index0 < idx else ('failed' if (loop.index0 == idx and st == 'failed') else ('current' if loop.index0 == idx else '')) }}">{{ title }}</div>
+  {% endfor %}
+</div>
+
+{% if st == 'draft' %}
+<div class="card">
+  <h3>Проверка сигнатур в песочнице</h3>
+  <p class="muted" style="margin:8px 0 24px;max-width:620px">Каждая сигнатура проверяется отдельно: сеть подтверждает, что трафик по адресу, порту и протоколу получает приоритет. Результат вы подтверждаете вручную.</p>
+  <dl class="kv" style="margin-bottom:28px"><dt>Сигнатур к проверке</dt><dd>{{ sigs|length }}</dd><dt>Тариф</dt><dd>{{ v.tariff.name }} · {{ v.duration.hours }} ч · {{ v.price|rub }} ₽/мес</dd></dl>
+  <form method="post" action="/cabinet/services/{{ v.service.id }}/test/start"><button class="btn" type="submit">Начать тест</button></form>
+</div>
+{% else %}
+<div class="card" style="padding:16px 24px 8px">
+<table class="table table-flush">
+  <thead><tr><th>№</th><th>Сигнатура</th><th>Результат</th><th>Подтверждение</th><th></th></tr></thead>
+  <tbody>
+  {% for sig, step in step_rows %}
+    <tr>
+      <td class="muted">{{ sig.id }}</td>
+      <td><span class="mono">{{ sig.ipv4 }}</span><div class="sub">{{ sig.uri }}:{{ sig.port }} · {{ sig.protocol }}</div></td>
+      <td>{% if step.result == 'success' %}<span class="badge badge-success">Успех</span>{% elif step.result == 'error' %}<span class="badge badge-error">Ошибка</span>{% else %}<span class="badge">Ожидает</span>{% endif %}</td>
+      <td>{% if step.confirmed %}<span class="badge badge-success">Подтверждено</span>
+          {% elif step.result == 'success' and st == 'in_testing' %}
+          <form class="inline" method="post" action="/cabinet/services/{{ v.service.id }}/test/confirm/{{ sig.id }}"><button class="btn btn-secondary btn-sm" type="submit">Подтвердить</button></form>
+          {% else %}<span class="muted">—</span>{% endif %}</td>
+      <td class="num">{% if step.result == 'pending' and st == 'in_testing' %}
+          <form class="inline" method="post" action="/cabinet/services/{{ v.service.id }}/test/check/{{ sig.id }}"><button class="btn btn-sm" type="submit">Проверить</button></form>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+
+{% if st == 'failed' and failed_step %}
+<div class="card section panel-err" style="border-left:4px solid var(--error)">
+  <h3>Тест не пройден</h3>
+  <p style="margin:8px 0 4px"><strong>{{ failed_step.error_code }}</strong></p>
+  <p class="muted">{{ failed_step.error_message }}</p>
+  <p class="hint" style="margin-top:16px">Исправьте сигнатуру и начните тест заново.</p>
+  <form method="post" action="/cabinet/services/{{ v.service.id }}/test/back" style="margin-top:20px"><button class="btn" type="submit">Вернуться к настройке</button></form>
+</div>
+{% elif st == 'passed' %}
+<div class="banner banner-on section"><span class="glyph" style="color:var(--success)">✓</span><div><h3>Тест пройден</h3><p class="muted">Все сигнатуры проверены и подтверждены.</p></div>
+  <div style="margin-left:auto"><a class="btn" href="?tab=launch">К запуску</a></div></div>
+{% elif st == 'applied' %}
+<div class="banner banner-on section"><span class="bolt"></span><div><h3>Приоритет включён</h3><p class="muted">Состояние и абоненты — на вкладке «Запуск и абоненты».</p></div>
+  <div style="margin-left:auto"><a class="btn btn-secondary" href="?tab=launch">Открыть</a></div></div>
+{% endif %}

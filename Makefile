@@ -1,4 +1,4 @@
-.PHONY: dev test lint fmt seed reset check demo
+.PHONY: dev test lint fmt seed reset check demo progress todo
 
 dev:
 	uv run uvicorn app.main:app --reload --port 8000
@@ -22,3 +22,9 @@ reset:
 check: lint test
 
 demo: reset dev
+
+progress:
+	uv run python scripts/progress.py
+
+todo:
+	uv run python scripts/progress.py --todo

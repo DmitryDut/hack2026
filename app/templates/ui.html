@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Компоненты{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Компоненты интерфейса</h1>
+  <p class="lead">Образец дизайн-системы: один акцент, крупные числа, воздух.</p>
+</div>
+
+<div class="grid grid-3">
+  <div class="stat"><div class="caption">Приоритет</div><div class="stat-value">1<span class="unit">из 2 услуг</span></div><div class="stat-note">до 00:07</div></div>
+  <div class="stat"><div class="caption">Стоимость</div><div class="stat-value">47&nbsp;000<span class="unit">₽/мес</span></div><div class="stat-note">запущено 30&nbsp;000</div></div>
+  <div class="stat"><div class="caption">Абонентов</div><div class="stat-value">3</div><div class="stat-note">с приоритетом</div></div>
+</div>
+
+<div class="section">
+  <div class="banner banner-on"><span class="bolt"></span><div><h3>Трафик приоритизирован</h3><p class="muted">Платина · до 100 Мбит/с · действует до 00:07</p></div></div>
+</div>
+
+<div class="section card">
+  <div class="actions">
+    <button class="btn">Основное действие</button>
+    <button class="btn btn-secondary">Вторичное</button>
+    <button class="btn btn-quiet">Тихое</button>
+    <button class="btn" disabled>Недоступно</button>
+    <span class="badge badge-success">Приоритет активен</span>
+    <span class="badge badge-warning">Срок истёк</span>
+    <span class="badge badge-error">Тест не пройден</span>
+    <span class="badge badge-info">Включается</span>
+    <span class="badge">Черновик</span>
+  </div>
+</div>
+{% endblock %}

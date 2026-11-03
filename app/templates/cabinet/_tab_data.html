@@ -1,0 +1,61 @@
+{% set errs = sig_errors|default({}) %}
+{% set form = sig_form|default({}) %}
+{% set applied = v.state.status == 'applied' %}
+<div class="section-head" style="margin-top:0"><h2>Сигнатуры трафика</h2></div>
+<p class="hint" style="margin:-8px 0 20px;max-width:640px">Сигнатура — «паспорт трафика»: по адресу, порту и протоколу сеть определяет, какие данные ускорять. Несколько портов — несколько строк.</p>
+{% if applied %}<div class="flash flash-info">Приоритет включён — изменения запрещены. Сброс выполняет оператор.</div>{% endif %}
+<div class="card" style="padding:16px 24px 8px">
+{% if sigs %}
+<table class="table table-flush">
+  <thead><tr><th>№</th><th>IPv4</th><th>URI</th><th class="num">Порт</th><th>Протокол</th><th></th></tr></thead>
+  <tbody>
+  {% for s in sigs %}
+    {% if edit == s.id %}
+    <tr><td colspan="6">
+      <form method="post" action="/cabinet/services/{{ v.service.id }}/signatures/{{ s.id }}" class="form-row">
+        <div class="field"><label>IPv4</label><input name="ipv4" type="text" value="{{ form.ipv4 if form else s.ipv4 }}"></div>
+        <div class="field"><label>URI</label><input name="uri" type="text" value="{{ form.uri if form else s.uri }}"></div>
+        <div class="field"><label>Порт</label><input name="port" type="text" value="{{ form.port if form else s.port }}"></div>
+        <div class="field"><label>Протокол</label><select name="protocol">{% for p in protocols %}<option {{ 'selected' if p == (form.protocol if form else s.protocol) }}>{{ p }}</option>{% endfor %}</select></div>
+        <div class="actions"><button class="btn btn-sm" type="submit">Сохранить</button><a class="btn btn-quiet btn-sm" href="?tab=data">Отмена</a></div>
+      </form>
+      {% for k, m in errs.items() %}<div class="field-error">{{ m }}</div>{% endfor %}
+    </td></tr>
+    {% else %}
+    <tr>
+      <td class="muted">{{ s.id }}</td><td class="mono">{{ s.ipv4 }}</td><td>{{ s.uri }}</td>
+      <td class="num">{{ s.port }}</td><td>{{ s.protocol }}</td>
+      <td class="num">{% if not applied %}
+        <a class="btn btn-quiet btn-sm" href="?tab=data&edit={{ s.id }}">Изменить</a>
+        <form class="inline" method="post" action="/cabinet/services/{{ v.service.id }}/signatures/{{ s.id }}/delete"><button class="btn btn-quiet btn-sm" type="submit">Удалить</button></form>
+      {% endif %}</td>
+    </tr>
+    {% endif %}
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="empty">Сигнатур пока нет. Добавьте адрес сервера вашего сервиса.</div>{% endif %}
+</div>
+
+{% if not applied and not edit %}
+<div class="card section" style="margin-top:24px">
+  <h3 style="margin-bottom:20px">Добавить сигнатуру</h3>
+  <form method="post" action="/cabinet/services/{{ v.service.id }}/signatures" class="form-row">
+    <div class="field"><label>IPv4</label><input name="ipv4" type="text" placeholder="10.10.2.10" value="{{ form.ipv4 or '' }}"></div>
+    <div class="field"><label>URI</label><input name="uri" type="text" placeholder="api.example.ru" value="{{ form.uri or '' }}"></div>
+    <div class="field"><label>Порт</label><input name="port" type="text" placeholder="8443" value="{{ form.port or '' }}"></div>
+    <div class="field"><label>Протокол</label><select name="protocol">{% for p in protocols %}<option {{ 'selected' if p == (form.protocol or 'HTTPS') }}>{{ p }}</option>{% endfor %}</select></div>
+    <button class="btn" type="submit">Добавить</button>
+  </form>
+  {% for k, m in errs.items() %}<div class="field-error" style="margin-top:12px">{{ m }}</div>{% endfor %}
+</div>
+{% endif %}
+
+<div class="row-end">
+  {% if sigs and v.state.status != 'applied' %}<a class="btn" href="?tab=tariff">Далее: тариф и стоимость</a>{% endif %}
+</div>
+{% if not applied %}
+<form method="post" action="/cabinet/services/{{ v.service.id }}/delete" onsubmit="return confirm('Удалить услугу и её сигнатуры?')" style="margin-top:48px">
+  <button class="btn btn-quiet btn-sm" type="submit">Удалить услугу</button>
+</form>
+{% endif %}
