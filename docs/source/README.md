@@ -31,4 +31,4 @@ Confluence МТС (`confluence.mts.ru`) из нашей среды **недос�
 - Orange TMF931 — https://docs.developer.orange.com/network-apis/api-catalog/tmf931-onboarding-and-ordering/ww/current/getting-started
 
 ## Ожидается от заказчика
-Официальная спецификация JSON для PX (сейчас есть только пример `expected_export.json`, V1/V2/V3). Справочник сигнатур систем коммутации. Дополнительные материалы — обещаны.
+Официальная спецификация JSON для PX — стандарта нет, на время работаем по нашему предложению `docs/px-json-proposal.md` (на основе примера `expected_export.json`, V1/V2/V3). Справочник сигнатур систем коммутации. Дополнительные материалы — обещаны.
