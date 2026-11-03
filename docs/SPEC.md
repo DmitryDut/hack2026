@@ -22,6 +22,7 @@
 | D13 | **Вход партнёра:** форма `/login` (мок авторизации, логин/пароль-заглушка из `config/accounts.yaml`); сессия — cookie с тем же HMAC-токеном, что и вход из витрины (`/embed?token=` создаёт сессию без формы). Реальной аутентификации нет | решение пользователя, макеты `ui/00-login.md` |
 | D14 | **Партнёрский интерфейс — личный кабинет** (`/cabinet*`): главная со списком услуг и карточка услуги с вкладками (данные → тариф и стоимость → тестирование → запуск и абоненты); вкладки и условия доступа — `config/process.yaml` | решение пользователя, `ui/02-cabinet.md` |
 | D15 | **Срок влияет на цену:** коэффициент срока `duration.price_multiplier` (12 ч = 1.0, чтобы пример задания «Платиновый на 12 часов = 30 000 ₽/мес» сохранился): 1 ч — 0.15, 6 ч — 0.6, 12 ч — 1.0, 24 ч — 1.7, 72 ч — 4.0 (рабочие значения, меняются записью справочника). Единица цены остаётся «₽/мес», как в задании | предложено командой для POC, подтверждено пользователем |
+| D17 | **Корпоративный стиль МТС:** тема `app/static/theme.css` (CSS-переменные поверх Pico.css) с токенами из `docs/ui/brand.md`; цвета и шрифты берутся только из токенов; логотип — официальный SVG без изменений; шрифты — локальный `@font-face` (файлы вне git) с заменой на Arial | NFR-8, решение пользователя |
 | D16 | **Признак приоритета** — вычисляется при показе: услуга `applied` и `expires_at` в будущем → «⚡ приоритет активен до …»; после срока — «⏱ срок истёк» (статус в БД не меняется). Отражает данные APIgw (мок), не измеряет трафик | решение пользователя |
 
 ## 2. Структура репозитория (целевая)
@@ -37,7 +38,7 @@ app/
   api/                    # тонкие JSON-роуты: entities.py schemas.py export.py sandbox.py ...
   web/                    # тонкие HTML-роуты: auth.py cabinet.py entities.py admin_schemas.py px_showcase.py embed.py subscriber.py landing.py operator.py
   mocks/                  # px.py resource_catalog.py gsma_qod.py qos_provisioning.py
-  templates/  static/
+  templates/  static/     # static/theme.css (токены бренда), static/brand/ (логотип), static/fonts/ (вне git)
 config/
   schemas/*.json          # стартовые JSON Schema: partner service signature qos_profile duration protocol subscriber qos_assignment
   relations.json  process.yaml  pricing.yaml  px_payload.yaml  mock_rules.yaml  protocols.yaml  accounts.yaml
