@@ -41,6 +41,7 @@ def test_export_has_only_confirmed_services(client):
         "code": "PLATINUM",
         "name": "Платина",
         "bitrate_mbps": 100,
+        "latency_ms": 30,
         "priority_level": 4,
         "sla_percent": 99.95,
     }

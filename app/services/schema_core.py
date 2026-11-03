@@ -85,6 +85,7 @@ def fields(db: Session, type_: str) -> list[dict]:
                 "placeholder": prop.get("x-placeholder", ""),
                 "default": prop.get("default"),
                 "type": prop.get("type"),
+                "nolist": bool(prop.get("x-nolist")),
             }
         )
     return result

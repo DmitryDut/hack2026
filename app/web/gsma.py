@@ -13,13 +13,3 @@ async def validate(request: Request):
 @router.post("/qod/sessions", status_code=201)
 async def create_session(request: Request):
     return gsma.create_session(await request.json())
-
-
-@router.post("/qos-assignments", status_code=201)
-async def create_assignment(request: Request):
-    return gsma.create_assignment(await request.json())
-
-
-@router.get("/qos-assignments/{assignment_id}")
-def get_assignment(assignment_id: str):
-    return gsma.get_assignment(assignment_id)

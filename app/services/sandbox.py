@@ -186,6 +186,39 @@ def _step(db: Session, service: Service, signature_id: str) -> TestStep:
     return step
 
 
+def _profile(db: Session, service: Service) -> dict:
+    tariff = db.get(Tariff, service.tariff_code) if service.tariff_code else None
+    if tariff is None:
+        return {}
+    return {
+        "code": tariff.code,
+        "bitrate_mbps": tariff.bitrate_mbps,
+        "priority_level": tariff.priority_level,
+        "latency_ms": (tariff.extra or {}).get("latency_ms"),
+    }
+
+
+def metrics_summary(rows: list[TestStep]) -> dict | None:
+    """Aggregate of the measured steps: averages and worst values against the norms."""
+    done = [r for r in rows if r.metrics and r.metrics.get("metrics")]
+    if not done:
+        return None
+    values = [r.metrics["metrics"] for r in done]
+    norms = done[0].metrics["norms"]
+    avg = lambda key: round(sum(v[key] for v in values) / len(values), 1)  # noqa: E731
+    return {
+        "checked": len(done),
+        "total": len(rows),
+        "norms": norms,
+        "latency_avg": avg("latency_ms"),
+        "latency_max": max(v["latency_ms"] for v in values),
+        "jitter_avg": avg("jitter_ms"),
+        "loss_max": max(v["packet_loss_pct"] for v in values),
+        "throughput_min": min(v["throughput_mbps"] for v in values),
+        "ok": all(not r.metrics.get("violations") for r in done),
+    }
+
+
 def check(db: Session, service: Service, signature_id: str) -> None:
     state = state_of(db, service)
     if state.status != "in_testing":
@@ -197,8 +230,15 @@ def check(db: Session, service: Service, signature_id: str) -> None:
         "signature": {"ipv4": sig.ipv4, "uri": sig.uri, "port": sig.port, "protocol": sig.protocol},
         "qos_profile_code": service.tariff_code,
         "duration_code": service.duration_code,
+        "qos_profile": _profile(db, service),
     }
     response = gsma.validate(request)
+    step.metrics = (
+        {k: response[k] for k in ("metrics", "norms", "violations") if k in response}
+        if response.get("metrics")
+        else None
+    )
+    latency = (response.get("metrics") or {}).get("latency_ms")
     net(db, service, "gsma_validate", "POST", "/mock-gsma/validate", request, response)
     if response["result"] == "error":
         step.result, step.error_code, step.error_message = (
@@ -213,6 +253,7 @@ def check(db: Session, service: Service, signature_id: str) -> None:
             signature_id=signature_id,
             result="error",
             error_code=response.get("error_code"),
+            latency_ms=latency,
         )
         state.status = "failed"
         log(
@@ -226,7 +267,14 @@ def check(db: Session, service: Service, signature_id: str) -> None:
         )
     else:
         step.result = "success"
-        log(db, service, "step_checked", signature_id=signature_id, result="success")
+        log(
+            db,
+            service,
+            "step_checked",
+            signature_id=signature_id,
+            result="success",
+            latency_ms=latency,
+        )
     db.commit()
 
 

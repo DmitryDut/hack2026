@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% set form = form|default({}) %}
+<div class="crumbs"><a href="/admin">Администрирование</a> / {{ title }}</div>
+<div class="page-head"><h1>{{ title }}</h1>
+  <p class="lead">{% if type_ == 'signature' %}Из каких параметров состоит паспорт трафика, по которому сеть узнаёт, что ускорять. Добавленное поле сразу появляется в форме и таблице сигнатур партнёра.{% else %}Дополнительные параметры услуги, которые заполняет партнёр.{% endif %}</p></div>
+{% if error %}<div class="flash flash-error">{{ error }}</div>{% endif %}
+
+<div class="card" style="padding:16px 24px 8px">
+<table class="table table-flush">
+  <thead><tr><th>Поле</th><th>Тип</th><th>Обязательное</th><th>Ограничения</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    {% if edit == r.name %}
+    <tr><td colspan="5">
+      <form method="post" action="{{ base.replace('passport', 'fields/signature').replace('service-fields', 'fields/service') }}/{{ r.name }}">
+        <div class="fields-row">
+          <div class="field"><label>Название</label><input type="text" name="title" value="{{ r.title }}"></div>
+          <div class="field"><label>Подсказка</label><input type="text" name="placeholder" value="{{ r.placeholder }}"></div>
+          {% if r.type == 'string' %}<div class="field"><label>Формат</label><select name="format">{% for k, t in formats.items() %}<option value="{{ k }}" {{ 'selected' if k == r.format }}>{{ t }}</option>{% endfor %}</select></div>
+          <div class="field"><label>Варианты через запятую</label><input type="text" name="options" value="{{ r.options }}"></div>{% endif %}
+          {% if r.type in ('integer', 'number') %}<div class="field"><label>Минимум</label><input type="text" name="minimum" value="{{ r.minimum }}"></div>
+          <div class="field"><label>Максимум</label><input type="text" name="maximum" value="{{ r.maximum }}"></div>{% endif %}
+          <div class="field"><label>Обязательное</label><input type="checkbox" name="required" {{ 'checked' if r.required }} {{ 'disabled' if r.required_locked }} style="width:auto;height:auto;accent-color:var(--mts-red)">{% if r.required_locked %}<div class="hint">базовое поле — обязательно</div>{% endif %}</div>
+        </div>
+        <div class="actions" style="margin-top:16px"><button class="btn btn-sm" type="submit">Сохранить</button><a class="btn btn-quiet btn-sm" href="{{ base }}">Отмена</a></div>
+      </form></td></tr>
+    {% else %}
+    <tr>
+      <td><strong style="font-weight:500">{{ r.title }}</strong><div class="sub mono">{{ r.name }}{% if r.core %} · базовое{% endif %}</div></td>
+      <td>{{ r.type_title }}{% if r.format %} · {{ formats[r.format] }}{% endif %}</td>
+      <td>{% if r.required %}<span class="badge badge-success">Да</span>{% else %}<span class="badge">Нет</span>{% endif %}</td>
+      <td class="small muted">{% if r.minimum != '' or r.maximum != '' %}{{ r.minimum if r.minimum != '' else '…' }} – {{ r.maximum if r.maximum != '' else '…' }}{% endif %}{% if r.options %} варианты: {{ r.options }}{% endif %}{% if r.placeholder %}<div>подсказка: {{ r.placeholder }}</div>{% endif %}</td>
+      <td class="num"><a class="btn btn-quiet btn-sm" href="?edit={{ r.name }}">Изменить</a>
+        {% if r.deletable %}<form class="inline" method="post" action="{{ base.replace('passport', 'fields/signature').replace('service-fields', 'fields/service') }}/{{ r.name }}/delete" onsubmit="return confirm('Удалить поле? Значения у существующих записей перестанут показываться.')"><button class="btn btn-quiet btn-sm" type="submit">Удалить</button></form>{% endif %}</td>
+    </tr>
+    {% endif %}
+  {% endfor %}
+  </tbody>
+</table></div>
+
+{% if not edit %}
+<div class="card section" style="margin-top:24px">
+  <h3 style="margin-bottom:20px">Добавить поле</h3>
+  <form method="post" action="/admin/fields/{{ type_ }}">
+    <div class="fields-row">
+      <div class="field"><label>Идентификатор</label><input type="text" name="name" value="{{ form.get('name', '') }}" placeholder="ipv6"></div>
+      <div class="field"><label>Название</label><input type="text" name="title" value="{{ form.get('title', '') }}" placeholder="IPv6"></div>
+      <div class="field"><label>Тип</label><select name="type">{% for k, t in types.items() %}<option value="{{ k }}" {{ 'selected' if k == form.get('type', 'string') }}>{{ t }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Формат (для текста)</label><select name="format">{% for k, t in formats.items() %}<option value="{{ k }}">{{ t }}</option>{% endfor %}</select></div>
+      <div class="field"><label>Минимум</label><input type="text" name="minimum" value="{{ form.get('minimum', '') }}"></div>
+      <div class="field"><label>Максимум</label><input type="text" name="maximum" value="{{ form.get('maximum', '') }}"></div>
+      <div class="field"><label>Варианты через запятую</label><input type="text" name="options" value="{{ form.get('options', '') }}" placeholder="для списка"></div>
+      <div class="field"><label>Подсказка</label><input type="text" name="placeholder" value="{{ form.get('placeholder', '') }}"></div>
+      <div class="field"><label>Обязательное</label><input type="checkbox" name="required" style="width:auto;height:auto;accent-color:var(--mts-red)"></div>
+    </div>
+    <div style="margin-top:20px"><button class="btn" type="submit">Добавить поле</button></div>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

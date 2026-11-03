@@ -58,7 +58,3 @@ def test_transitions_are_guarded(client):
     assert "Сначала подтвердите цену" in client.post(f"{SVC}/test/start").text
     assert "только во время тестирования" in client.post(f"{SVC}/test/check/sig-1").text
     assert "после успешного тестирования" in client.post(f"{SVC}/apply").text
-    assert (
-        "Сначала включите приоритет"
-        in client.post(f"{SVC}/subscribers", data={"msisdn": "+79161230001"}).text
-    )

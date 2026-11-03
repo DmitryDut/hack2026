@@ -3,7 +3,7 @@
 Требования: CORE-1…CORE-9, DATA-1…DATA-3, NFR-1. Сценарии: C-01…C-04, N-11.
 
 ## 4.1 Универсальный список — `/entities/{type}`
-Один шаблон для любого типа (partner, service, signature, qos_profile, duration, protocol, subscriber, qos_assignment, offer и любых новых).
+Один шаблон для любого типа (partner, service, signature, qos_profile, duration, protocol, offer и любых новых).
 ```text
 QoS-профили                                                   [+ Создать]
 ┌────────┬──────────┬─────────┬──────────┬─────────┬──────────┬──────────┐
@@ -43,7 +43,6 @@ URI            [____________]      ← необязательно после п�
 │ qos_profile     │ │   "properties": {                                    │
 │ duration        │ │     "ipv4": {"type":"string","format":"ipv4",…},     │
 │ protocol        │ │     …                                                │
-│ subscriber      │ │   },                                                 │
 │ qos_assignment  │ │   "required": ["service_ref","ipv4","port",…]        │
 │ offer           │ │ }                                                    │
 └─────────────────┘ └──────────────────────────────────────────────────────┘

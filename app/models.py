@@ -66,6 +66,7 @@ class TestStep(SQLModel, table=True):
     service_id: str = Field(index=True)
     signature_id: str
     result: str = "pending"  # pending | success | error
+    metrics: dict | None = Field(default=None, sa_column=Column(JSON))
     confirmed: bool = False
     error_code: str | None = None
     error_message: str | None = None
@@ -90,21 +91,6 @@ class NetworkRequest(SQLModel, table=True):
     request: str = "{}"
     response: str = "{}"
     status_code: int = 200
-    created_at: datetime = Field(default_factory=now)
-
-
-class Subscriber(SQLModel, table=True):
-    msisdn: str = Field(primary_key=True)
-    tariff: str = ""
-    region: str = ""
-
-
-class Assignment(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    msisdn: str = Field(index=True)
-    service_id: str = Field(index=True)
-    assignment_id: str = ""
-    status: str = "REQUESTED"  # REQUESTED | AVAILABLE | UNAVAILABLE
     created_at: datetime = Field(default_factory=now)
 
 

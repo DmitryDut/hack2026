@@ -9,7 +9,7 @@ service:
     qos_profile:
       from: tariff_code
       entity: tariff
-      fields: [code, name, bitrate_mbps, priority_level, sla_percent]
+      fields: [code, name, bitrate_mbps, latency_ms, priority_level, sla_percent]
     duration:
       from: duration_code
       entity: duration

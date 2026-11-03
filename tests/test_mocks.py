@@ -36,13 +36,3 @@ def test_session_contract(client):
         and body["session_id"].startswith("qod-session-")
     )
     assert body["qos_profile"] == "PLATINUM" and body["expires_at"] > body["started_at"]
-
-
-def test_assignment_contract(client):
-    created = client.post(
-        "/mock-gsma/qos-assignments",
-        json={"device": {"phoneNumber": "+79161230001"}, "qosProfile": "PLATINUM"},
-    )
-    assert created.status_code == 201 and created.json()["status"] == "REQUESTED"
-    got = client.get(f"/mock-gsma/qos-assignments/{created.json()['assignmentId']}")
-    assert got.json()["status"] == "AVAILABLE"

@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_fields.html" import control %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% set form = form|default({}) %}{% set errors = errors|default({}) %}
+<div class="crumbs"><a href="/admin">Администрирование</a> / {{ title }}</div>
+<div class="page-head"><h1>{{ title }}</h1>
+  <p class="lead">{% if type_ == 'tariff' %}Уровни качества для партнёров. Скрытый тариф пропадает из выбора, но остаётся у услуг, которые его уже используют.{% else %}Срок действия приоритета и его влияние на цену.{% endif %}</p></div>
+
+<div class="card" style="padding:16px 24px 8px;overflow-x:auto">
+<table class="table table-flush">
+  <thead><tr>{% for f in fields if not f.nolist %}<th{% if f.type in ('integer','number') %} class="num"{% endif %}>{{ f.title }}</th>{% endfor %}<th class="num">В услугах</th><th></th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    {% if edit == r.id %}
+    <tr><td colspan="{{ fields|length + 2 }}">
+      <form method="post" action="/admin/data/{{ type_ }}/{{ r.id }}">
+        <div class="fields-row">{% for f in fields %}{% if f.name == 'code' %}<div class="field"><label>{{ f.title }}</label><input type="text" value="{{ r[f.name] }}" disabled></div>
+        {% else %}{{ control(f, form.get(f.name, r.get(f.name)), errors.get(f.name)) }}{% endif %}{% endfor %}</div>
+        <div class="actions" style="margin-top:16px"><button class="btn btn-sm" type="submit">Сохранить</button><a class="btn btn-quiet btn-sm" href="/admin/{{ 'tariffs' if type_ == 'tariff' else 'durations' }}">Отмена</a></div>
+      </form></td></tr>
+    {% else %}
+    <tr>
+      {% for f in fields if not f.nolist %}{% set val = r.get(f.name) %}<td{% if f.type in ('integer','number') %} class="num"{% endif %}>{% if f.name == 'status' %}<span class="badge {{ 'badge-success' if val == 'ACTIVE' else '' }}">{{ 'Доступен' if val == 'ACTIVE' else 'Скрыт' }}</span>{% elif f.name in ('code', 'name') %}<strong style="font-weight:500">{{ val }}</strong>{% elif val in (none, '') %}<span class="muted">—</span>{% else %}{{ val }}{% endif %}</td>{% endfor %}
+      <td class="num">{{ usage[r.id] }}</td>
+      <td class="num">
+        <a class="btn btn-quiet btn-sm" href="?edit={{ r.id }}">Изменить</a>
+        {% if type_ == 'tariff' %}<form class="inline" method="post" action="/admin/data/tariff/{{ r.id }}/toggle"><button class="btn btn-quiet btn-sm" type="submit">{{ 'Скрыть' if r.status == 'ACTIVE' else 'Показать' }}</button></form>{% endif %}
+        <form class="inline" method="post" action="/admin/data/{{ type_ }}/{{ r.id }}/delete" onsubmit="return confirm('Удалить запись?')"><button class="btn btn-quiet btn-sm" type="submit" {{ 'disabled' if usage[r.id] }} title="{{ 'Используется в услугах' if usage[r.id] }}">Удалить</button></form>
+      </td>
+    </tr>
+    {% endif %}
+  {% endfor %}
+  </tbody>
+</table></div>
+
+{% if not edit %}
+<div class="card section" style="margin-top:24px">
+  <h3 style="margin-bottom:20px">Добавить {{ 'уровень' if type_ == 'tariff' else 'срок' }}</h3>
+  <form method="post" action="/admin/data/{{ type_ }}">
+    <div class="fields-row">{% for f in fields %}{{ control(f, form.get(f.name), errors.get(f.name)) }}{% endfor %}</div>
+    {% if errors.get('_') %}<div class="field-error" style="margin-top:12px">{{ errors['_'] }}</div>{% endif %}
+    <div style="margin-top:20px"><button class="btn" type="submit">Добавить</button></div>
+  </form>
+</div>
+{% endif %}
+
+{% if type_ == 'tariff' %}
+<div class="section"><div class="section-head"><h2>Матрица цен</h2><span class="hint">₽ в месяц · по текущей формуле</span></div>
+<div class="card" style="padding:16px 24px 8px">
+<table class="table table-flush">
+  <thead><tr><th>Тариф</th>{% for d in durations %}<th class="num">{{ d.hours }} ч</th>{% endfor %}</tr></thead>
+  <tbody>{% for t, prices in matrix %}<tr><td><strong style="font-weight:500">{{ t.name }}</strong> <span class="muted small">до {{ t.bitrate_mbps }} Мбит/с</span>{% if t.status != 'ACTIVE' %} <span class="badge">скрыт</span>{% endif %}</td>{% for price in prices %}<td class="num">{{ price|rub }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+</table>
+<p class="hint" style="margin:16px 0">Формула: {% for f in factors %}{{ f.label or f.field }}{{ ' × ' if not loop.last }}{% endfor %} (файл <span class="mono">config/pricing.yaml</span>; после правки — «Перечитать YAML» в разделе «Администрирование»).</p>
+</div></div>
+{% endif %}
+{% endblock %}

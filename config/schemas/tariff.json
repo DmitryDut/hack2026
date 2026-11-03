@@ -5,8 +5,9 @@
     "code": {"type": "string", "title": "Код", "pattern": "^[A-Z0-9_]{2,24}$", "x-error": "Код: заглавная латиница, цифры и _ (2–24 символа)", "x-placeholder": "DIAMOND_PLUS"},
     "name": {"type": "string", "title": "Название", "minLength": 1, "x-placeholder": "Бриллиант+"},
     "bitrate_mbps": {"type": "integer", "title": "Скорость до, Мбит/с", "minimum": 1},
-    "priority_level": {"type": "integer", "title": "Приоритет (1–10)", "minimum": 1, "maximum": 10},
+    "priority_level": {"type": "integer", "title": "Приоритет (1–10)", "minimum": 1, "maximum": 10, "x-nolist": true},
     "price_multiplier": {"type": "number", "title": "Коэффициент тарифа", "minimum": 0.01},
+    "latency_ms": {"type": "integer", "title": "Целевая задержка, мс", "minimum": 1, "default": 100, "x-placeholder": "30"},
     "sla_percent": {"type": "number", "title": "SLA, %", "minimum": 90, "maximum": 100},
     "status": {"type": "string", "title": "Статус", "enum": ["ACTIVE", "INACTIVE"], "default": "ACTIVE"}
   },

@@ -6,4 +6,15 @@ validate:
       result: error
       error_code: BEARER_TIMEOUT
       message: "RTP-поток не отвечает: таймаут установки dedicated bearer для media2.mts-link.ru:5005"
+    # Пример: переопределить метрики сигнатуры — тест не пройдёт по норме задержки
+    # - match: {uri: slow.example.ru}
+    #   metrics: {latency_ms: 180}
   default: {result: success}
+
+# Технические метрики теста (мок считает их детерминированно от сигнатуры и тарифа)
+metrics:
+  thresholds:
+    jitter_ms: 10          # джиттер не выше, мс
+    packet_loss_pct: 1.0   # потери пакетов не выше, %
+    throughput_ratio: 0.9  # достигнутая скорость не ниже доли от скорости тарифа
+  # задержка сравнивается с целевой задержкой тарифа (поле «Целевая задержка» в Администрировании)

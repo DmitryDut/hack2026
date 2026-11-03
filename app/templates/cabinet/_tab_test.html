@@ -1,5 +1,11 @@
 {% set st = v.state.status %}
 {% set idx = {'draft': 0, 'in_testing': 1, 'failed': 1, 'passed': 2, 'applied': 3}[st] %}
+{% macro metric(step, key, fmt, op) %}
+  {% if step and step.metrics and step.metrics.metrics %}
+    {% set val = step.metrics.metrics[key] %}{% set norm = step.metrics.norms[key] %}
+    <div class="metric {{ 'metric-bad' if key in step.metrics.violations }}"><strong>{{ fmt % val }}</strong><span class="sub">норма {{ op }} {{ "%g" % norm }}</span></div>
+  {% else %}<span class="muted">—</span>{% endif %}
+{% endmacro %}
 <div class="stepper">
   {% for title in ['Подготовка', 'Тестирование', 'Тест пройден', 'Приоритет включён'] %}
     <div class="step {{ 'done' if loop.index0 < idx else ('failed' if (loop.index0 == idx and st == 'failed') else ('current' if loop.index0 == idx else '')) }}">{{ title }}</div>
@@ -9,20 +15,33 @@
 {% if st == 'draft' %}
 <div class="card">
   <h3>Проверка сигнатур в песочнице</h3>
-  <p class="muted" style="margin:8px 0 24px;max-width:620px">Каждая сигнатура проверяется отдельно: сеть подтверждает, что трафик по адресу, порту и протоколу получает приоритет. Результат вы подтверждаете вручную.</p>
-  <dl class="kv" style="margin-bottom:28px"><dt>Сигнатур к проверке</dt><dd>{{ sigs|length }}</dd><dt>Тариф</dt><dd>{{ v.tariff.name }} · {{ v.duration.hours }} ч · {{ v.price|rub }} ₽/мес</dd></dl>
+  <p class="muted" style="margin:8px 0 24px;max-width:620px">Для каждой сигнатуры сеть измеряет задержку, джиттер, потери пакетов и скорость и сравнивает с нормой тарифа. Результат вы подтверждаете вручную.</p>
+  <dl class="kv" style="margin-bottom:28px"><dt>Сигнатур к проверке</dt><dd>{{ sigs|length }}</dd><dt>Тариф</dt><dd>{{ v.tariff.name }} · {{ v.duration.hours }} ч · {{ v.price|rub }} ₽/мес</dd>
+    {% if v.tariff %}<dt>Нормы тарифа</dt><dd>задержка до {{ value_of(v.tariff, 'latency_ms') or '—' }} мс · скорость от 90 % от {{ v.tariff.bitrate_mbps }} Мбит/с</dd>{% endif %}</dl>
   <form method="post" action="/cabinet/services/{{ v.service.id }}/test/start"><button class="btn" type="submit">Начать тест</button></form>
 </div>
 {% else %}
+{% if summary %}
+<div class="grid grid-4" style="margin-bottom:16px">
+  <div class="stat stat-sm"><div class="caption">Задержка</div><div class="stat-value">{{ summary.latency_avg }}<span class="unit">мс сред.</span></div><div class="stat-note {{ 'metric-bad' if summary.latency_max > summary.norms.latency_ms }}">макс {{ summary.latency_max }} · норма ≤ {{ summary.norms.latency_ms }}</div></div>
+  <div class="stat stat-sm"><div class="caption">Джиттер</div><div class="stat-value">{{ summary.jitter_avg }}<span class="unit">мс сред.</span></div><div class="stat-note">норма ≤ {{ summary.norms.jitter_ms }}</div></div>
+  <div class="stat stat-sm"><div class="caption">Потери пакетов</div><div class="stat-value">{{ summary.loss_max }}<span class="unit">% макс.</span></div><div class="stat-note">норма ≤ {{ summary.norms.packet_loss_pct }}</div></div>
+  <div class="stat stat-sm"><div class="caption">Скорость</div><div class="stat-value">{{ summary.throughput_min }}<span class="unit">Мбит/с мин.</span></div><div class="stat-note">норма ≥ {{ summary.norms.throughput_mbps }}</div></div>
+</div>
+<p class="hint" style="margin-bottom:20px">Измерено сигнатур: {{ summary.checked }} из {{ summary.total }}. {% if summary.ok %}Все измеренные значения в норме.{% else %}Есть значения вне нормы.{% endif %}</p>
+{% endif %}
 <div class="card" style="padding:16px 24px 8px">
 <table class="table table-flush">
-  <thead><tr><th>№</th><th>Сигнатура</th><th>Результат</th><th>Подтверждение</th><th></th></tr></thead>
+  <thead><tr><th>Сигнатура</th><th>Задержка, мс</th><th>Джиттер, мс</th><th>Потери, %</th><th>Скорость, Мбит/с</th><th>Результат</th><th>Подтверждение</th><th></th></tr></thead>
   <tbody>
   {% for sig, step in step_rows %}
     <tr>
-      <td class="muted">{{ sig.id }}</td>
       <td><span class="mono">{{ sig.ipv4 }}</span><div class="sub">{{ sig.uri }}:{{ sig.port }} · {{ sig.protocol }}</div></td>
-      <td>{% if step.result == 'success' %}<span class="badge badge-success">Успех</span>{% elif step.result == 'error' %}<span class="badge badge-error">Ошибка</span>{% else %}<span class="badge">Ожидает</span>{% endif %}</td>
+      <td>{{ metric(step, 'latency_ms', '%.1f', '≤') }}</td>
+      <td>{{ metric(step, 'jitter_ms', '%.1f', '≤') }}</td>
+      <td>{{ metric(step, 'packet_loss_pct', '%.2f', '≤') }}</td>
+      <td>{{ metric(step, 'throughput_mbps', '%.1f', '≥') }}</td>
+      <td>{% if step.result == 'success' %}<span class="badge badge-success">В норме</span>{% elif step.result == 'error' %}<span class="badge badge-error">Ошибка</span>{% else %}<span class="badge">Ожидает</span>{% endif %}</td>
       <td>{% if step.confirmed %}<span class="badge badge-success">Подтверждено</span>
           {% elif step.result == 'success' and st == 'in_testing' %}
           <form class="inline" method="post" action="/cabinet/services/{{ v.service.id }}/test/confirm/{{ sig.id }}"><button class="btn btn-secondary btn-sm" type="submit">Подтвердить</button></form>
@@ -37,17 +56,17 @@
 {% endif %}
 
 {% if st == 'failed' and failed_step %}
-<div class="card section panel-err" style="border-left:4px solid var(--error)">
+<div class="card section" style="border-left:4px solid var(--error)">
   <h3>Тест не пройден</h3>
   <p style="margin:8px 0 4px"><strong>{{ failed_step.error_code }}</strong></p>
   <p class="muted">{{ failed_step.error_message }}</p>
-  <p class="hint" style="margin-top:16px">Исправьте сигнатуру и начните тест заново.</p>
+  <p class="hint" style="margin-top:16px">Исправьте сигнатуру или тариф и начните тест заново.</p>
   <form method="post" action="/cabinet/services/{{ v.service.id }}/test/back" style="margin-top:20px"><button class="btn" type="submit">Вернуться к настройке</button></form>
 </div>
 {% elif st == 'passed' %}
-<div class="banner banner-on section"><span class="glyph" style="color:var(--success)">✓</span><div><h3>Тест пройден</h3><p class="muted">Все сигнатуры проверены и подтверждены.</p></div>
+<div class="banner banner-on section"><span class="glyph" style="color:var(--success)">✓</span><div><h3>Тест пройден</h3><p class="muted">Все сигнатуры проверены, метрики в норме, результаты подтверждены.</p></div>
   <div style="margin-left:auto"><a class="btn" href="?tab=launch">К запуску</a></div></div>
 {% elif st == 'applied' %}
-<div class="banner banner-on section"><span class="bolt"></span><div><h3>Приоритет включён</h3><p class="muted">Состояние и абоненты — на вкладке «Запуск и абоненты».</p></div>
+<div class="banner banner-on section"><span class="bolt"></span><div><h3>Приоритет включён</h3><p class="muted">Состояние приоритета — на вкладке «Запуск».</p></div>
   <div style="margin-left:auto"><a class="btn btn-secondary" href="?tab=launch">Открыть</a></div></div>
 {% endif %}

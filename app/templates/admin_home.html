@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Администрирование{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Администрирование</h1>
+  <p class="lead">Настройка платформы без разработки: тарифы и градации, сроки, поля паспорта трафика. Изменения сразу видны партнёрам.</p></div>
+<div class="grid grid-2">
+  <a class="card tile" href="/admin/tariffs"><div class="caption">Тарифы</div><h2>Градации и тарифы</h2>
+    <p class="muted">Уровни качества: скорость, целевая задержка, SLA, коэффициент цены. Добавить, изменить, скрыть. Матрица цен «уровень × срок».</p><div class="tile-meta">Уровней: {{ tariffs }}</div></a>
+  <a class="card tile" href="/admin/durations"><div class="caption">Сроки</div><h2>Сроки и коэффициенты</h2>
+    <p class="muted">На сколько часов включается приоритет и как срок влияет на цену.</p><div class="tile-meta">Сроков: {{ durations }}</div></a>
+  <a class="card tile" href="/admin/passport"><div class="caption">Паспорт трафика</div><h2>Параметры идентификации трафика</h2>
+    <p class="muted">Поля сигнатуры: IPv4, URI, порт, протокол и любые дополнительные. Добавить поле, сделать обязательным, задать формат и границы.</p><div class="tile-meta">Полей: {{ sig_fields }}</div></a>
+  <a class="card tile" href="/admin/service-fields"><div class="caption">Услуга</div><h2>Поля услуги</h2>
+    <p class="muted">Дополнительные параметры услуги, которые заполняет партнёр (например, SLA, контакт).</p><div class="tile-meta">Полей: {{ svc_fields }}</div></a>
+</div>
+<div class="section"><div class="section-head"><h2>Расширенно</h2></div>
+<div class="card" style="padding:8px 32px">
+  <table class="table table-flush"><tbody>
+    <tr><td><strong>Схемы и новые типы</strong><div class="sub">JSON-схемы всех типов, создание новых справочников</div></td><td class="num"><a class="btn btn-secondary btn-sm" href="/admin/schemas">Открыть</a></td></tr>
+    <tr><td><strong>Справочники новых типов</strong><div class="sub">Записи типов, созданных в редакторе схем{% if custom %}: {% for d in custom %}{{ d.title }}{{ ', ' if not loop.last }}{% endfor %}{% endif %}</div></td><td class="num"><a class="btn btn-secondary btn-sm" href="/entities">Открыть</a></td></tr>
+    <tr><td><strong>Файлы конфигурации</strong><div class="sub">формула цены <span class="mono">pricing.yaml</span>, вкладки <span class="mono">process.yaml</span>, JSON для PX <span class="mono">px_payload.yaml</span>, правила мока <span class="mono">mock_rules.yaml</span></div></td>
+      <td class="num"><form class="inline" method="post" action="/admin/config/reload"><button class="btn btn-secondary btn-sm" type="submit">Перечитать YAML</button></form></td></tr>
+  </tbody></table>
+</div></div>
+{% endblock %}

@@ -7,7 +7,7 @@
       <input type="radio" name="tariff_code" value="{{ r.t.code }}" data-base="{{ r.base }}" {{ 'checked' if v.service.tariff_code == r.t.code }} {{ 'disabled' if applied }} required>
       <span class="t-name">{{ r.t.name }}</span>
       <span class="t-speed">до {{ r.t.bitrate_mbps }} Мбит/с</span>
-      <span class="muted small t-sla">SLA {{ r.t.sla_percent }} %<br>коэф. ×{{ '%g'|format(r.t.price_multiplier) }}</span>
+      <span class="muted small t-sla">SLA {{ r.t.sla_percent }} % · задержка до {{ value_of(r.t, 'latency_ms') or '—' }} мс<br>коэф. ×{{ '%g'|format(r.t.price_multiplier) }}</span>
       <span class="t-price"><span data-price>{{ r.price|rub if r.price is not none else '' }}</span> ₽<div class="muted small" style="font-family:var(--font-text);font-weight:400">в месяц</div></span>
     </label>
   {% endfor %}

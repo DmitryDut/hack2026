@@ -6,7 +6,7 @@ tabs:
   - {id: data, title: "Данные услуги"}
   - {id: tariff, title: "Тариф и стоимость"}
   - {id: test, title: "Тестирование"}
-  - {id: launch, title: "Запуск и абоненты"}
+  - {id: launch, title: "Запуск"}
 gates:
   test: [has_signatures, price_confirmed]
   launch: [test_passed]

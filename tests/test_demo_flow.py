@@ -85,12 +85,10 @@ def test_full_demo_path(client):
     # locked after activation
     locked = post(client, f"{SVC}/signatures/sig-1/delete")
     assert "изменения запрещены" in locked.text
-    # subscriber
-    assert "Абонент не найден" in post(client, f"{SVC}/subscribers", msisdn="+79990000000").text
-    connected = post(client, f"{SVC}/subscribers", msisdn="+7 916 123 00 01")
-    assert "Подключено: +79161230001" in connected.text
-    card = client.get("/subscribers/+79161230001")
-    assert card.status_code == 200 and "Трафик приоритизирован" in card.text
+    # the priority panel shows what is under priority
+    panel = client.get(SVC + "?tab=launch").text
+    assert "10.10.1.8:5006" in panel and "Сигнатур под приоритетом" not in panel
+    assert "Сигнатур под приоритетом" in client.get("/cabinet").text
     # operator sees the journal and can reset
     login_as(client, "operator")
     journal = client.get("/operator/journal").text

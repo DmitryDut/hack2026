@@ -42,12 +42,6 @@ Applied: изменения запрещены; выход только явны
 - Цена: конфиг формулы; по умолчанию `bitrate_mbps × 100 × price_multiplier` (₽/мес).
 - Вариант предложения (PROC-4): набор «сервис + профиль + Duration + цена» с названием; у партнёра несколько вариантов, один выбирается для отправки.
 
-## 4. Абонент (SUB-1…SUB-3)
-| Сущность | Поля |
-|---|---|
-| Subscriber | msisdn, tariff, region (seed) |
-| QosAssignment | id, subscriber, service, qos_profile, status (`REQUESTED\|AVAILABLE\|UNAVAILABLE`), created_at |
-
 ## 5. Соответствие стандартам (STD-1…STD-3)
 | Наше | CAMARA | 3GPP |
 |---|---|---|
@@ -58,7 +52,6 @@ Applied: изменения запрещены; выход только явны
 | signature.port | `applicationServerPorts.ports` | `flowDescriptions` |
 | signature.uri | — | PFD `urls` / `domainNames` |
 | signature.protocol | — | PFD `flowDescriptions`, `dnProtocol` |
-| QosAssignment | `POST /qos-assignments {device.phoneNumber, qosProfile}` | — |
 
 ## 6. Правила
 - Валидация данных — по JSON Schema типа; серверная и в форме совпадают.

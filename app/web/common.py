@@ -1,10 +1,11 @@
+import json
 from urllib.parse import quote
 
 from fastapi import HTTPException
 from fastapi.responses import RedirectResponse
-from sqlmodel import Session, select
+from sqlmodel import Session
 
-from app.models import Assignment, Duration, Service, Tariff
+from app.models import Duration, Service, Tariff
 from app.services import pricing, sandbox
 from app.services.priority import priority_view
 
@@ -43,7 +44,6 @@ def view(db: Session, service: Service) -> dict:
         label, css = "Срок приоритета истёк", "badge-warning"
     else:
         label, css = STATUS[state.status]
-    assignments = db.exec(select(Assignment).where(Assignment.service_id == service.id)).all()
     return {
         "service": service,
         "tariff": tariff,
@@ -54,5 +54,11 @@ def view(db: Session, service: Service) -> dict:
         "label": label,
         "css": css,
         "sig_count": len(sandbox.signatures(db, service.id)),
-        "assignments": assignments,
     }
+
+
+def parse_details(raw: str) -> dict:
+    try:
+        return json.loads(raw)
+    except ValueError:
+        return {}

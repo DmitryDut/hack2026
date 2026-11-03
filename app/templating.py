@@ -21,15 +21,7 @@ def dtf(value: datetime | None) -> str:
     return value.astimezone().strftime("%d.%m %H:%M:%S") if value else "—"
 
 
-def phone(value: str | None) -> str:
-    digits = "".join(ch for ch in (value or "") if ch.isdigit())
-    if len(digits) != 11:
-        return value or "—"
-    return f"+7 {digits[1:4]} {digits[4:7]} {digits[7:9]} {digits[9:]}"
-
-
 templates.env.filters["rub"] = rub
-templates.env.filters["phone"] = phone
 templates.env.filters["hm"] = hm
 templates.env.filters["dtf"] = dtf
 
@@ -63,8 +55,6 @@ EVENT_LABELS = {
     "applied_to_production": "Приоритет включён",
     "applied_reset": "Сброшено оператором",
     "change_rejected": "Изменение отклонено",
-    "assignment_requested": "Подключение запрошено",
-    "assignment_available": "Подключение доступно",
 }
 templates.env.filters["event_label"] = lambda code: EVENT_LABELS.get(code, code)
 templates.env.filters["pretty"] = lambda raw: __import__("json").dumps(

@@ -15,7 +15,6 @@
 | T-007 | Трассировка 17 реплик + панель | 3 | TRC-1, TRC-2 | T-005 | done | claude | main |
 | T-008 | Песочница: автомат, TestRun/TestStep, сброс при правках, EventLog | 3 | SBX-1…6, SBX-8, NFR-3 | T-002 | done | claude | main |
 | T-009 | Мок GSMA APIgw (validate, sessions), активация, изоляция по партнёру | 3 | SBX-7, SBX-9, SBX-10, STD-2, STD-3 | T-008 | done | claude | main |
-| T-010 | Подключение абоненту (QoS Provisioning) + карточка абонента | 4 | SUB-1…3 | T-009 | done | claude | main |
 | T-011 | Сценарий «поменяйте вот это» + `docs/change-playbook.md` | 4 | NFR-1 | T-003, T-004, T-014 | done | claude | main |
 | T-012 | E2E-тест демо, `make demo`, полировка, README | 4 | NFR-5…7 | T-006…T-011, T-014 | done | claude | main |
 | T-014 | Личный кабинет партнёра: главная, карточка услуги (вкладки), тариф и стоимость, предложение, признак приоритета | 3 | CAB-1…4, SBX-11, PROC-2, PROC-3 | T-004, T-006, T-008, T-010 | done | claude | main |

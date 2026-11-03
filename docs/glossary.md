@@ -20,11 +20,9 @@
 | **PCRF / PCEF** | Политики и их применение в 4G |
 | **PFD** (Packet Flow Description) | 3GPP: описание трафика приложения (`flowDescriptions`, `urls`, `domainNames`) |
 | **AsSessionWithQoS** | 3GPP T8: подписка приложения на QoS-сессию (`flowInfo`, `qosReference`, `qosDuration`) |
-| **QoS Provisioning / Assignment** | CAMARA: бессрочное назначение профиля устройству по номеру |
 | **QoS-сессия** | CAMARA QoD: назначение профиля на время для потока «устройство ↔ сервер» |
 | **App-Flow** | Поток приложения «клиент ↔ сервер», которому дают приоритет |
 | **sink** | URL для уведомлений (CloudEvents) у CAMARA |
-| **MSISDN** | Телефонный номер абонента |
 | **CJ** (Customer Journey) | Оркестратор форм и вызовов в диаграмме задания |
 | **RC** (Resource Catalog) | Каталог ресурсов, в том числе QoS-профилей |
 | **JSON Schema** | Описание структуры и правил валидации данных; у нас — описание модели |

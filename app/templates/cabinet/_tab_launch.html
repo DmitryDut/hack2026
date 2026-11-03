@@ -20,8 +20,8 @@
       <dt>Тариф</dt><dd>{{ v.tariff.name }} · до {{ v.tariff.bitrate_mbps }} Мбит/с · SLA {{ v.tariff.sla_percent }} %</dd>
       <dt>Действует</dt><dd>с {{ v.priority.since|hm }} до {{ v.priority.until|hm }} · осталось {{ v.priority.remaining }}</dd>
       <dt>Под приоритетом</dt><dd><div class="sig-list">{% for s in sigs %}<span class="mono">{{ s.ipv4 }}:{{ s.port }} {{ s.protocol }}</span>{% endfor %}</div></dd>
+      {% if summary %}<dt>Результаты теста</dt><dd>задержка в среднем {{ summary.latency_avg }} мс (норма ≤ {{ summary.norms.latency_ms }}), джиттер {{ summary.jitter_avg }} мс, потери до {{ summary.loss_max }} %, скорость от {{ summary.throughput_min }} Мбит/с</dd>{% endif %}
       <dt>Сессия в сети</dt><dd class="mono">{{ v.state.session_id }}</dd>
-      <dt>Абонентов</dt><dd>{{ assignments|length }}</dd>
     </dl>
     <p class="hint" style="margin-top:24px">Статус отражает включение по данным GSMA QoD API (мок); фактический трафик в прототипе не измеряется.</p>
   </div>
@@ -29,21 +29,4 @@
   <div class="card" style="border-left:4px solid var(--warning)"><h2>Срок приоритета истёк</h2>
     <p class="muted" style="margin-top:8px">Приоритет действовал до {{ v.priority.until|dtf }}. Для повторного включения попросите оператора сбросить услугу в черновик.</p></div>
   {% endif %}
-
-  <div class="card section">
-    <h3 style="margin-bottom:20px">Подключить услугу абоненту</h3>
-    <form method="post" action="/cabinet/services/{{ v.service.id }}/subscribers" class="actions" style="align-items:flex-end">
-      <div class="field" style="margin:0;width:320px"><label for="msisdn">Номер абонента</label><input id="msisdn" name="msisdn" type="text" placeholder="+7 916 123 00 01" required></div>
-      <button class="btn" type="submit">Подключить</button>
-    </form>
-    {% if assignments %}
-    <table class="table table-flush" style="margin-top:28px">
-      <thead><tr><th>Абонент</th><th>Статус</th><th>Приоритет</th><th></th></tr></thead>
-      <tbody>{% for a in assignments %}<tr>
-        <td>{{ a.msisdn|phone }}</td><td>{{ a.status }}</td>
-        <td>{% if a.status == 'AVAILABLE' and v.priority.state == 'on' %}<span class="badge badge-success">Трафик приоритизирован</span>{% else %}<span class="badge badge-info">Включается</span>{% endif %}</td>
-        <td class="num"><a class="btn btn-quiet btn-sm" href="/subscribers/{{ a.msisdn|urlencode }}">Карточка</a></td></tr>{% endfor %}</tbody>
-    </table>
-    {% endif %}
-  </div>
 {% endif %}

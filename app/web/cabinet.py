@@ -5,7 +5,6 @@ from sqlmodel import Session, select
 
 from app.db import get_session
 from app.models import (
-    Assignment,
     Duration,
     EventLog,
     NetworkRequest,
@@ -24,11 +23,10 @@ from app.services import (
     sandbox,
     schema_core,
     signatures,
-    subscribers,
 )
 from app.services.sandbox import RuleError
 from app.templating import render
-from app.web.common import own_service, redirect, view
+from app.web.common import own_service, parse_details, redirect, view
 
 router = APIRouter(prefix="/cabinet")
 
@@ -48,7 +46,7 @@ def dashboard(
     on = [i for i in items if i["priority"]["state"] == "on"]
     running = sum(i["price"] or 0 for i in on)
     total = sum(i["price"] or 0 for i in items)
-    subscribers_on = sum(len(i["assignments"]) for i in on)
+    signatures_on = sum(i["sig_count"] for i in on)
     return render(
         request,
         "cabinet/dashboard.html",
@@ -60,7 +58,7 @@ def dashboard(
         running=running,
         total=total,
         drafts=total - running,
-        subscribers_on=subscribers_on,
+        signatures_on=signatures_on,
     )
 
 
@@ -156,16 +154,13 @@ def _render_card(request, db, user, service_id, tab="data", edit=None, status_co
         step_rows = {s.signature_id: s for s in sandbox.steps(db, service.id)}
         extra["step_rows"] = [(sig, step_rows.get(sig.id)) for sig in sigs if sig.id in step_rows]
         extra["failed_step"] = next((s for s in step_rows.values() if s.result == "error"), None)
+        extra["summary"] = sandbox.metrics_summary(list(step_rows.values()))
     if tab == "launch":
+        extra["summary"] = sandbox.metrics_summary(sandbox.steps(db, service.id))
         if status == "passed":
             extra["payload"] = json.dumps(
                 sandbox.preview(db, service), ensure_ascii=False, indent=2
             )
-        sub = {
-            s.msisdn: s
-            for s in db.exec(select(Assignment).where(Assignment.service_id == service.id))
-        }
-        extra["assignments"] = list(sub.values())
         extra["session_net"] = db.exec(
             select(NetworkRequest)
             .where(
@@ -311,7 +306,7 @@ def delete_service(
         sandbox.guard_change(db, service)
     except RuleError as exc:
         return redirect(_tab_url(service_id, "data"), error=str(exc))
-    for model in (Signature, sandbox.TestStep, Assignment):
+    for model in (Signature, sandbox.TestStep):
         for row in db.exec(select(model).where(model.service_id == service.id)):
             db.delete(row)
     state = db.get(ServiceState, service.id)
@@ -409,21 +404,6 @@ def apply(service_id: str, user=Depends(auth.require_partner), db: Session = Dep
     return _action(service_id, "launch", sandbox.apply, "Приоритет включён", user, db)
 
 
-@router.post("/services/{service_id}/subscribers")
-def connect_subscriber(
-    service_id: str,
-    msisdn: str = Form(""),
-    user=Depends(auth.require_partner),
-    db: Session = Depends(get_session),
-):
-    service = own_service(db, user, service_id)
-    try:
-        row = subscribers.connect(db, service, msisdn)
-    except RuleError as exc:
-        return redirect(_tab_url(service_id, "launch"), error=str(exc))
-    return redirect(_tab_url(service_id, "launch"), ok=f"Подключено: {row.msisdn}")
-
-
 @router.get("/offer")
 def offer_page(
     request: Request, user=Depends(auth.require_partner), db: Session = Depends(get_session)
@@ -504,7 +484,7 @@ def _journal(request, db, user, partner_id, base):
             nr.where(NetworkRequest.partner_id == partner_id),
         )
     names = {s.id: s.name for s in db.exec(select(Service))}
-    events = [(e, subscribers.details(e.details)) for e in db.exec(ev)]
+    events = [(e, parse_details(e.details)) for e in db.exec(ev)]
     return render(
         request,
         "journal.html",
