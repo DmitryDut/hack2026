@@ -1,0 +1,11 @@
+{
+  "_comment": "Сид инвентори для варианта 3. Справочники намеренно НЕ заполнены — их загрузит агент в сценарии C2. Если на демо нет времени на C2 — использовать полный seed из tz/variant_1_crud_inventory/test_data/seed.json.",
+  "partners": [
+    { "partner_id": "mts-link-1", "name": "MTS Link", "status": "active" }
+  ],
+  "services": [],
+  "signatures": [],
+  "qos_profiles": [],
+  "durations": [],
+  "protocols": []
+}

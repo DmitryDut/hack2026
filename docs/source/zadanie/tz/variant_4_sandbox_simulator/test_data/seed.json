@@ -1,0 +1,48 @@
+{
+  "_comment": "Сид песочницы. Сервис Link ВКС имеет 4 сигнатуры; media2 (порт 5005) — сценарная, должна падать при первой проверке (см. demo_scenario.json). Сервис Link Чаты — в Draft без прогона (для демонстрации изоляции и многозадачности).",
+  "qos_profiles": [
+    { "code": "BRONZE", "name": "Bronze", "bitrate_mbps": 10, "priority_level": 1 },
+    { "code": "SILVER", "name": "Silver", "bitrate_mbps": 30, "priority_level": 2 },
+    { "code": "GOLD", "name": "Gold", "bitrate_mbps": 50, "priority_level": 3 },
+    { "code": "PLATINUM", "name": "Platinum", "bitrate_mbps": 100, "priority_level": 4 },
+    { "code": "DIAMOND", "name": "Diamond", "bitrate_mbps": 200, "priority_level": 5 }
+  ],
+  "durations": [
+    { "code": "1H", "hours": 1 },
+    { "code": "6H", "hours": 6 },
+    { "code": "12H", "hours": 12 },
+    { "code": "24H", "hours": 24 },
+    { "code": "72H", "hours": 72 }
+  ],
+  "partners": [
+    { "partner_id": "mts-link-1", "name": "MTS Link", "status": "active" },
+    { "partner_id": "other-partner", "name": "Другой партнёр (для проверки изоляции)", "status": "active" }
+  ],
+  "services": [
+    {
+      "id": "svc-vcs",
+      "partner_id": "mts-link-1",
+      "name": "Link ВКС",
+      "description": "Видеоконференцсвязь MTS Link",
+      "qos_profile_code": "PLATINUM",
+      "duration_code": "12H",
+      "status": "draft"
+    },
+    {
+      "id": "svc-chat",
+      "partner_id": "mts-link-1",
+      "name": "Link Чаты",
+      "description": "Чаты MTS Link",
+      "qos_profile_code": "GOLD",
+      "duration_code": "24H",
+      "status": "draft"
+    }
+  ],
+  "signatures": [
+    { "id": "sig-1", "service_id": "svc-vcs", "ipv4": "10.10.1.5", "uri": "vcs.mts-link.ru", "port": 443, "protocol": "HTTPS", "demo_result": "success" },
+    { "id": "sig-2", "service_id": "svc-vcs", "ipv4": "10.10.1.6", "uri": "media.mts-link.ru", "port": 5004, "protocol": "RTP", "demo_result": "success" },
+    { "id": "sig-3", "service_id": "svc-vcs", "ipv4": "10.10.1.7", "uri": "api.mts-link.ru", "port": 8443, "protocol": "HTTPS", "demo_result": "success" },
+    { "id": "sig-4", "service_id": "svc-vcs", "ipv4": "10.10.1.8", "uri": "media2.mts-link.ru", "port": 5005, "protocol": "RTP", "demo_result": "error_first_time", "_note": "сценарная: первый прогон падает, после исправления порта на 5006 — success" },
+    { "id": "sig-5", "service_id": "svc-chat", "ipv4": "10.10.3.7", "uri": "chat.mts-link.ru", "port": 443, "protocol": "HTTPS", "demo_result": "success" }
+  ]
+}

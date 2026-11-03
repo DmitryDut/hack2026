@@ -1,0 +1,57 @@
+{
+  "_comment": "Стартовые JSON Schema (draft-07) пяти сущностей кейса. Загружаются в entity_defs при инициализации.",
+  "partner": {
+    "title": "Партнёр",
+    "type": "object",
+    "properties": {
+      "partner_id": { "type": "string", "title": "Partner ID" },
+      "name": { "type": "string", "title": "Название" },
+      "status": { "type": "string", "enum": ["active", "draft"], "default": "draft", "title": "Статус" }
+    },
+    "required": ["partner_id", "name"]
+  },
+  "service": {
+    "title": "Сервис",
+    "type": "object",
+    "properties": {
+      "name": { "type": "string", "title": "Название" },
+      "description": { "type": "string", "title": "Описание" },
+      "partner_ref": { "type": "string", "title": "Partner ID (владелец)" },
+      "qos_profile_code": { "type": "string", "title": "QoS-профиль (код)" },
+      "duration_code": { "type": "string", "title": "Duration (код)" }
+    },
+    "required": ["name", "partner_ref"]
+  },
+  "signature": {
+    "title": "Сигнатура",
+    "type": "object",
+    "properties": {
+      "ipv4": { "type": "string", "title": "IPv4", "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" },
+      "uri": { "type": "string", "title": "URI" },
+      "port": { "type": "integer", "minimum": 1, "maximum": 65535, "title": "Порт" },
+      "protocol": { "type": "string", "enum": ["RTP", "TCP", "UDP", "HTTP", "HTTPS", "DNS", "IMAP", "POP3", "SSH"], "title": "Протокол" },
+      "service_ref": { "type": "string", "title": "Сервис (id)" }
+    },
+    "required": ["ipv4", "uri", "port", "protocol", "service_ref"]
+  },
+  "qos_profile": {
+    "title": "QoS-профиль",
+    "type": "object",
+    "properties": {
+      "code": { "type": "string", "enum": ["BRONZE", "SILVER", "GOLD", "PLATINUM", "DIAMOND"], "title": "Код" },
+      "name": { "type": "string", "title": "Название" },
+      "bitrate_mbps": { "type": "integer", "title": "Скорость, Мбит/с" },
+      "priority_level": { "type": "integer", "minimum": 1, "maximum": 5, "title": "Приоритет" }
+    },
+    "required": ["code", "bitrate_mbps", "priority_level"]
+  },
+  "duration": {
+    "title": "Длительность",
+    "type": "object",
+    "properties": {
+      "code": { "type": "string", "title": "Код" },
+      "hours": { "type": "integer", "minimum": 1, "title": "Часов" }
+    },
+    "required": ["code", "hours"]
+  }
+}

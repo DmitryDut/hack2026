@@ -1,0 +1,30 @@
+{
+  "_comment": "Демо-сценарий песочницы: детерминированные результаты проверок и ожидаемая последовательность событий. mock-gsma/validate должен возвращать результат по этому конфигу, а не случайно.",
+  "validation_rules": [
+    {
+      "signature_id": "sig-4",
+      "rule": "error_first_time",
+      "error_message": "RTP-поток не отвечает: таймаут установки dedicated bearer для media2.mts-link.ru:5005",
+      "_note": "первый прогон — error; после изменения порта на 5006 — success (правило по значению порта, не по id, чтобы работал исправленный вариант)"
+    },
+    { "signature_id": "*", "rule": "success" }
+  ],
+  "fix_step": {
+    "description": "Оператор исправляет сигнатуру sig-4: порт 5005 → 5006",
+    "expected": [
+      "изменение в статусе InTesting/Failed сбрасывает прогон в Draft (F7) — прогнать через сброс",
+      "после исправления и нового прогона sig-4 (порт 5006) возвращает success"
+    ]
+  },
+  "demo_sequence": [
+    { "step": 1, "action": "открыть сервис svc-vcs", "expect": "статус Draft, 4 сигнатуры, PLATINUM/12H" },
+    { "step": 2, "action": "«Начать тест»", "expect": "InTesting; 4 TestStep со статусом pending" },
+    { "step": 3, "action": "«Проверить» sig-1, sig-2, sig-3 + подтвердить галками", "expect": "3×success+confirmed" },
+    { "step": 4, "action": "«Проверить» sig-4", "expect": "error с сообщением про RTP-таймаут; статус Failed" },
+    { "step": 5, "action": "попытка изменить sig-4 в Failed (или сразу «Вернуться к конфигурированию»)", "expect": "Draft; EventLog: прогон сброшен" },
+    { "step": 6, "action": "исправить порт sig-4 на 5006 → новый прогон → все 4 success → подтвердить", "expect": "Passed" },
+    { "step": 7, "action": "«Старт коммерческой эксплуатации»", "expect": "session_id от мока; статус Applied" },
+    { "step": 8, "action": "открыть журнал", "expect": "полная цепочка событий по возрастанию времени" },
+    { "step": 9, "action": "переключить X-Partner-Id: other-partner", "expect": "сервисы mts-link-1 не видны (A9)" }
+  ]
+}

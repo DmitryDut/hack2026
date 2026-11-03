@@ -1,0 +1,66 @@
+{
+  "_comment": "Сид-данные для инициализации БД варианта 1. Скрипт загрузки: прочитать объекты в порядке следования (справочники → партнёр → сервисы → сигнатуры → назначение).",
+  "protocols": [
+    { "code": "RTP", "layer": "transport", "description": "Real-time Transport Protocol" },
+    { "code": "TCP", "layer": "transport", "description": "Transmission Control Protocol" },
+    { "code": "UDP", "layer": "transport", "description": "User Datagram Protocol" },
+    { "code": "HTTP", "layer": "application", "description": "Hypertext Transfer Protocol" },
+    { "code": "HTTPS", "layer": "application", "description": "HTTP Secure over TLS" },
+    { "code": "DNS", "layer": "application", "description": "Domain Name System" },
+    { "code": "IMAP", "layer": "application", "description": "Internet Message Access Protocol" },
+    { "code": "POP3", "layer": "application", "description": "Post Office Protocol v3" },
+    { "code": "SSH", "layer": "application", "description": "Secure Shell" }
+  ],
+  "qos_profiles": [
+    { "code": "BRONZE", "name": "Bronze", "bitrate_mbps": 10, "priority_level": 1, "price_multiplier": 1.0 },
+    { "code": "SILVER", "name": "Silver", "bitrate_mbps": 30, "priority_level": 2, "price_multiplier": 1.5 },
+    { "code": "GOLD", "name": "Gold", "bitrate_mbps": 50, "priority_level": 3, "price_multiplier": 2.0 },
+    { "code": "PLATINUM", "name": "Platinum", "bitrate_mbps": 100, "priority_level": 4, "price_multiplier": 3.0 },
+    { "code": "DIAMOND", "name": "Diamond", "bitrate_mbps": 200, "priority_level": 5, "price_multiplier": 4.0 }
+  ],
+  "durations": [
+    { "code": "1H", "hours": 1 },
+    { "code": "6H", "hours": 6 },
+    { "code": "12H", "hours": 12 },
+    { "code": "24H", "hours": 24 },
+    { "code": "72H", "hours": 72 }
+  ],
+  "partners": [
+    {
+      "partner_id": "mts-link-1",
+      "name": "MTS Link",
+      "status": "active"
+    }
+  ],
+  "services": [
+    {
+      "partner_id": "mts-link-1",
+      "name": "Link ВКС",
+      "description": "Видеоконференцсвязь MTS Link"
+    }
+  ],
+  "signatures": [
+    {
+      "service_name": "Link ВКС",
+      "ipv4": "10.10.1.5",
+      "uri": "vcs.mts-link.ru",
+      "port": 443,
+      "protocol": "HTTPS"
+    },
+    {
+      "service_name": "Link ВКС",
+      "ipv4": "10.10.1.6",
+      "uri": "media.mts-link.ru",
+      "port": 5004,
+      "protocol": "RTP"
+    }
+  ],
+  "assignments": [
+    {
+      "service_name": "Link ВКС",
+      "qos_profile_code": "PLATINUM",
+      "duration_code": "12H",
+      "status": "confirmed"
+    }
+  ]
+}

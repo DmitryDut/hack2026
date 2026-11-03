@@ -1,0 +1,29 @@
+{
+  "_comment": "Эталон GET /api/v1/export/mts-link-1 после загрузки seed_entities.json (до демо-изменений). id записей могут отличаться, структура и значения полей — нет.",
+  "partner": {
+    "partner_id": "mts-link-1",
+    "name": "MTS Link",
+    "status": "active",
+    "services": [
+      {
+        "name": "Link ВКС",
+        "description": "Видеоконференцсвязь MTS Link",
+        "qos_profile_code": "PLATINUM",
+        "duration_code": "12H",
+        "signatures": [
+          { "ipv4": "10.10.1.5", "uri": "vcs.mts-link.ru", "port": 443, "protocol": "HTTPS" },
+          { "ipv4": "10.10.1.6", "uri": "media.mts-link.ru", "port": 5004, "protocol": "RTP" }
+        ]
+      },
+      {
+        "name": "Link Чаты",
+        "description": "Чаты MTS Link",
+        "qos_profile_code": "GOLD",
+        "duration_code": "24H",
+        "signatures": [
+          { "ipv4": "10.10.3.7", "uri": "chat.mts-link.ru", "port": 443, "protocol": "HTTPS" }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "_comment": "Каталог QoS-профилей Resource Catalog для GET /rc/qos_catalog (реплика 10 диаграммы).",
+  "profiles": [
+    { "code": "GOLD", "name": "Gold", "bitrate_mbps": 50, "sla_percent": 99.9, "price_multiplier": 2.0 },
+    { "code": "SILVER", "name": "Silver", "bitrate_mbps": 30, "sla_percent": 99.5, "price_multiplier": 1.5 },
+    { "code": "BRONZE", "name": "Bronze", "bitrate_mbps": 10, "sla_percent": 99.0, "price_multiplier": 1.0 },
+    { "code": "PLATINUM", "name": "Platinum", "bitrate_mbps": 100, "sla_percent": 99.95, "price_multiplier": 3.0 }
+  ],
+  "durations": [
+    { "code": "1H", "hours": 1 },
+    { "code": "6H", "hours": 6 },
+    { "code": "12H", "hours": 12 },
+    { "code": "24H", "hours": 24 }
+  ],
+  "protocols": ["RTP", "TCP", "UDP", "HTTP", "HTTPS", "DNS", "IMAP", "POP3", "SSH"]
+}

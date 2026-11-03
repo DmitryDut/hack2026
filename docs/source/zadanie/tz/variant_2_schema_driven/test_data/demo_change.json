@@ -1,0 +1,86 @@
+{
+  "_comment": "Изменения для демо «смена требований» (критерии A2-A5). Порядок применения: 1) PUT /api/v1/schemas/signature с новой схемой; 2) PUT /api/v1/schemas/service; 3) PUT /api/v1/schemas/monitoring (новая сущность — просто создаст тип).",
+  "signature_new": {
+    "title": "Сигнатура",
+    "type": "object",
+    "properties": {
+      "ipv4": { "type": "string", "title": "IPv4", "pattern": "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" },
+      "ipv6": { "type": "string", "title": "IPv6 (новое требование)" },
+      "uri": { "type": "string", "title": "URI" },
+      "port": { "type": "integer", "minimum": 1, "maximum": 65535, "title": "Порт" },
+      "protocol": { "type": "string", "enum": ["RTP", "TCP", "UDP", "HTTP", "HTTPS", "DNS", "IMAP", "POP3", "SSH"], "title": "Протокол" },
+      "service_ref": { "type": "string", "title": "Сервис (id)" }
+    },
+    "required": ["ipv4", "port", "protocol", "service_ref"],
+    "_note": "uri убран из required; добавлен ipv6"
+  },
+  "service_new": {
+    "title": "Сервис",
+    "type": "object",
+    "properties": {
+      "name": { "type": "string", "title": "Название" },
+      "description": { "type": "string", "title": "Описание" },
+      "partner_ref": { "type": "string", "title": "Partner ID (владелец)" },
+      "qos_profile_code": { "type": "string", "title": "QoS-профиль (код)" },
+      "duration_code": { "type": "string", "title": "Duration (код)" },
+      "sla_percent": { "type": "number", "minimum": 99, "maximum": 99.999, "title": "SLA, % (новое требование)" }
+    },
+    "required": ["name", "partner_ref"],
+    "_note": "добавлен sla_percent с диапазоном 99..99.999 — для проверки 422 при sla_percent: 50"
+  },
+  "monitoring_new_entity": {
+    "title": "Мониторинг",
+    "type": "object",
+    "properties": {
+      "endpoint": { "type": "string", "title": "Endpoint" },
+      "interval_sec": { "type": "integer", "minimum": 10, "default": 60, "title": "Интервал, сек" },
+      "service_ref": { "type": "string", "title": "Сервис (id)" }
+    },
+    "required": ["endpoint", "service_ref"],
+    "_note": "полностью новая сущность — критерий A4: раздел появился в UI, код не менялся"
+  },
+  "verification_payloads": [
+    {
+      "id": "A3-before-change",
+      "when": "до применения изменений (старая схема signature)",
+      "request": "POST /api/v1/entity/signature",
+      "body": { "ipv4": "10.10.9.9", "ipv6": "::1", "port": 8443, "protocol": "HTTPS", "service_ref": "s-001" },
+      "expected": "422 (поле ipv6 не входило в схему / uri был required)"
+    },
+    {
+      "id": "A3-after-change",
+      "when": "после PUT signature_new",
+      "request": "POST /api/v1/entity/signature",
+      "body": { "ipv4": "10.10.9.9", "ipv6": "::1", "port": 8443, "protocol": "HTTPS", "service_ref": "s-001" },
+      "expected": "201 (ipv6 валиден, uri больше не обязателен)"
+    },
+    {
+      "id": "A5-uri-optional",
+      "when": "после PUT signature_new",
+      "request": "POST /api/v1/entity/signature",
+      "body": { "ipv4": "10.10.9.10", "port": 9443, "protocol": "TCP", "service_ref": "s-002" },
+      "expected": "201 (uri отсутствует — допустимо)"
+    },
+    {
+      "id": "A4-monitoring-create",
+      "when": "после PUT monitoring_new_entity",
+      "request": "POST /api/v1/entity/monitoring",
+      "body": { "endpoint": "https://mon.mts-link.ru/health", "interval_sec": 30, "service_ref": "s-001" },
+      "expected": "201; в UI появился раздел «Мониторинг»"
+    },
+    {
+      "id": "A4-monitoring-invalid",
+      "when": "после PUT monitoring_new_entity",
+      "request": "POST /api/v1/entity/monitoring",
+      "body": { "endpoint": "https://mon.mts-link.ru/health", "interval_sec": 5, "service_ref": "s-001" },
+      "expected": "422 (interval_sec < 10)"
+    },
+    {
+      "id": "sla-out-of-range",
+      "when": "после PUT service_new",
+      "request": "POST /api/v1/entity/service",
+      "body": { "name": "Link Записи", "partner_ref": "mts-link-1", "sla_percent": 50 },
+      "expected": "422 (sla_percent вне 99..99.999)"
+    }
+  ]
+}

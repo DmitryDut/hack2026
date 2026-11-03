@@ -1,0 +1,29 @@
+{
+  "_comment": "Стартовые записи для entities. id — фиктивные строки (для варианта 2 достаточно строковых id).",
+  "partner": [
+    { "id": "p-001", "partner_id": "mts-link-1", "name": "MTS Link", "status": "active" }
+  ],
+  "service": [
+    { "id": "s-001", "name": "Link ВКС", "description": "Видеоконференцсвязь MTS Link", "partner_ref": "mts-link-1", "qos_profile_code": "PLATINUM", "duration_code": "12H" },
+    { "id": "s-002", "name": "Link Чаты", "description": "Чаты MTS Link", "partner_ref": "mts-link-1", "qos_profile_code": "GOLD", "duration_code": "24H" }
+  ],
+  "signature": [
+    { "id": "sig-001", "ipv4": "10.10.1.5", "uri": "vcs.mts-link.ru", "port": 443, "protocol": "HTTPS", "service_ref": "s-001" },
+    { "id": "sig-002", "ipv4": "10.10.1.6", "uri": "media.mts-link.ru", "port": 5004, "protocol": "RTP", "service_ref": "s-001" },
+    { "id": "sig-003", "ipv4": "10.10.3.7", "uri": "chat.mts-link.ru", "port": 443, "protocol": "HTTPS", "service_ref": "s-002" }
+  ],
+  "qos_profile": [
+    { "id": "q-001", "code": "BRONZE", "name": "Bronze", "bitrate_mbps": 10, "priority_level": 1 },
+    { "id": "q-002", "code": "SILVER", "name": "Silver", "bitrate_mbps": 30, "priority_level": 2 },
+    { "id": "q-003", "code": "GOLD", "name": "Gold", "bitrate_mbps": 50, "priority_level": 3 },
+    { "id": "q-004", "code": "PLATINUM", "name": "Platinum", "bitrate_mbps": 100, "priority_level": 4 },
+    { "id": "q-005", "code": "DIAMOND", "name": "Diamond", "bitrate_mbps": 200, "priority_level": 5 }
+  ],
+  "duration": [
+    { "id": "d-001", "code": "1H", "hours": 1 },
+    { "id": "d-002", "code": "6H", "hours": 6 },
+    { "id": "d-003", "code": "12H", "hours": 12 },
+    { "id": "d-004", "code": "24H", "hours": 24 },
+    { "id": "d-005", "code": "72H", "hours": 72 }
+  ]
+}

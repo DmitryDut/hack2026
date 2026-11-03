@@ -1,0 +1,71 @@
+{
+  "_comment": "Сценарии проверки агента (критерии A1-A4, A8). Каждый сценарий: сообщения пользователя, ожидаемые tool calls (после подтверждения), ожидаемое состояние инвентори.",
+  "C1_create_service_from_free_text": {
+    "criterion": "A1",
+    "description": "Создание сервиса из свободного текста за одно обращение",
+    "user_message": "Привет! Заведи для партнёра mts-link-1 сервис «Link ВКС» — видеоконференции. Сигнатуры: vcs.mts-link.ru порт 443 HTTPS, адрес 10.10.1.5; и медиа: media.mts-link.ru порт 5004 RTP, адрес 10.10.1.6. Профиль поставь Platinum, длительность 12 часов.",
+    "expected_tool_calls": [
+      { "name": "create_service", "args": { "partner_id": "mts-link-1", "name": "Link ВКС", "description": "видеоконференции" } },
+      { "name": "add_signature", "args": { "ipv4": "10.10.1.5", "uri": "vcs.mts-link.ru", "port": 443, "protocol": "HTTPS" } },
+      { "name": "add_signature", "args": { "ipv4": "10.10.1.6", "uri": "media.mts-link.ru", "port": 5004, "protocol": "RTP" } },
+      { "name": "assign_qos", "args": { "qos_profile_code": "PLATINUM", "duration_code": "12H" } }
+    ],
+    "requires_confirmation_before_write": true,
+    "expected_state": {
+      "services": [
+        { "name": "Link ВКС", "signatures_count": 2, "qos_profile_code": "PLATINUM", "duration_code": "12H" }
+      ]
+    }
+  },
+  "C2_load_raw_specification": {
+    "criterion": "A2",
+    "description": "Загрузка сырой спецификации из raw_specification.md",
+    "user_message": "<вставить содержимое raw_specification.md целиком>",
+    "expected_behavior": [
+      "агент извлекает: 9 протоколов (RTP, TCP, UDP, HTTP, HTTPS, DNS, IMAP, POP3, SSH)",
+      "агент извлекает: 5 профилей (BRONZE..DIAMOND с битрейтами 10/30/50/100/200 и приоритетами 1..5)",
+      "агент извлекает: 5 длительностей (1H, 6H, 12H, 24H, 72H)",
+      "показывает таблицу пользователю ДО создания",
+      "после подтверждения — создаёт справочники"
+    ],
+    "expected_state": {
+      "protocols_count": 9,
+      "qos_profiles_count": 5,
+      "durations_count": 5
+    }
+  },
+  "C3_invalid_port_recovery": {
+    "criterion": "A3",
+    "description": "Невалидный порт — агент объясняет и исправляет",
+    "user_message": "Добавь ещё сигнатуру к Link ВКС: stream.mts-link.ru порт 99999 TCP, адрес 10.10.1.7",
+    "expected_behavior": [
+      "агент распознаёт, что порт 99999 вне диапазона 1-65535",
+      "НЕ сохраняет запись; объясняет ошибку пользователю",
+      "предлагает исправление (например, 9999 или спрашивает правильный порт)"
+    ],
+    "followup_user_message": "Ой, порт 9999",
+    "expected_state": {
+      "signatures_added": [ { "ipv4": "10.10.1.7", "uri": "stream.mts-link.ru", "port": 9999, "protocol": "TCP" } ]
+    }
+  },
+  "C4_unknown_profile": {
+    "criterion": "A4",
+    "description": "Несуществующий профиль — список допустимых, без записи",
+    "user_message": "Поставь сервису Link ВКС профиль SUPER",
+    "expected_behavior": [
+      "агент отвечает списком допустимых кодов: BRONZE, SILVER, GOLD, PLATINUM, DIAMOND",
+      "назначение не выполняется"
+    ],
+    "expected_state": { "qos_profile_code": "PLATINUM" }
+  },
+  "C5_duplicate_signature": {
+    "criterion": "A8",
+    "description": "Повторное создание той же сигнатуры — дубликат отклоняется",
+    "user_message": "Добавь сигнатуру vcs.mts-link.ru 443 HTTPS, адрес 10.10.1.5, к Link ВКС",
+    "expected_behavior": [
+      "инструмент возвращает 409 duplicate",
+      "агент объясняет: такая сигнатура уже есть",
+      "в инвентори остаётся одна запись"
+    ]
+  }
+}

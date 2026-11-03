@@ -1,0 +1,22 @@
+{
+  "_comment": "Конфиг связей для экспорта (F10). Экспорт собирает дерево: root_type -> по цепочке children с полем связи и типом. Универсально, без кода под конкретные сущности.",
+  "root": "partner",
+  "match_field": "partner_id",
+  "children": [
+    {
+      "type": "service",
+      "parent_field": "partner_ref",
+      "join_to": "partner_id",
+      "include_fields": ["name", "description", "qos_profile_code", "duration_code"],
+      "children": [
+        {
+          "type": "signature",
+          "parent_field": "service_ref",
+          "join_to": "id",
+          "include_fields": ["ipv4", "uri", "port", "protocol"],
+          "children": []
+        }
+      ]
+    }
+  ]
+}

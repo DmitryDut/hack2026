@@ -1,0 +1,42 @@
+{
+  "_comment": "Эталон ответа GET /api/v1/partners/mts-link-1/export после выполнения демо-сценария из demo_script.md (шаги 1-4). UUID и timestamps могут отличаться; ключи, значения и структура должны совпадать.",
+  "partner_id": "mts-link-1",
+  "partner_name": "MTS Link",
+  "generated_at": "2026-10-30T12:00:00Z",
+  "services": [
+    {
+      "name": "Link ВКС",
+      "description": "Видеоконференцсвязь MTS Link",
+      "qos_profile": {
+        "code": "PLATINUM",
+        "name": "Platinum",
+        "bitrate_mbps": 100,
+        "priority_level": 4
+      },
+      "duration": {
+        "code": "12H",
+        "hours": 12
+      },
+      "signatures": [
+        {
+          "ipv4": "10.10.1.5",
+          "uri": "vcs.mts-link.ru",
+          "port": 443,
+          "protocol": "HTTPS"
+        },
+        {
+          "ipv4": "10.10.1.6",
+          "uri": "media.mts-link.ru",
+          "port": 5004,
+          "protocol": "RTP"
+        },
+        {
+          "ipv4": "10.10.2.10",
+          "uri": "api.mts-link.ru",
+          "port": 8443,
+          "protocol": "HTTPS"
+        }
+      ]
+    }
+  ]
+}

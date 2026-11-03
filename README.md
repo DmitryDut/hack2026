@@ -13,8 +13,8 @@ make check   # линтер + тесты
 ```
 
 ## Документация
-- Первоисточники: [docs/source/](docs/source/README.md)
-- Требования: [docs/requirements.md](docs/requirements.md) · Разбор: [docs/analysis.md](docs/analysis.md) · Глоссарий: [docs/glossary.md](docs/glossary.md)
+- Первоисточники, варианты ТЗ и тестовые данные: [docs/source/](docs/source/README.md)
+- Требования (ФТ/НФТ): [docs/requirements.md](docs/requirements.md) · Разбор: [docs/analysis.md](docs/analysis.md) · Глоссарий: [docs/glossary.md](docs/glossary.md)
 - Модель и процесс: [docs/domain.md](docs/domain.md) · Архитектура: [docs/architecture.md](docs/architecture.md)
 - Сценарий демо: [docs/demo-script.md](docs/demo-script.md)
 
